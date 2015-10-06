@@ -263,10 +263,10 @@ void SetPWM_Steering_usingTimer(uint32_t ulBaseAddr, uint32_t ulFrequency, int32
 	ulPeriod = SysCtlClockGet() / ulFrequency;
 	ROM_TimerLoadSet(ulBaseAddr,TIMER_A, ulPeriod-1);
 	ROM_TimerLoadSet(ulBaseAddr,TIMER_B, ulPeriod-1);
-	if (ucDutyCycle > 90)
-		ucDutyCycle = 90;
-	else if (ucDutyCycle < -90)
-		ucDutyCycle = -90;
+	if (ucDutyCycle > 70)
+		ucDutyCycle = 70;
+	else if (ucDutyCycle < -70)
+		ucDutyCycle = -70;
 	ROM_TimerMatchSet(ulBaseAddr, TIMER_A, (100 + ucDutyCycle) * ulPeriod / 200 - 1);
 	ROM_TimerMatchSet(ulBaseAddr, TIMER_B, (100 + ucDutyCycle) * ulPeriod / 200 - 1);
 }
