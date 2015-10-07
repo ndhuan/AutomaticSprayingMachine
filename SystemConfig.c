@@ -121,7 +121,7 @@ void ConfigPulseTimer_Steering_Mode(void){
 	IntPrioritySet(INT_WTIMER3B, 0x40);
 }
 
-void ConfigPIDTimer(uint32_t TimerIntervalms)
+void ConfigControlTimer(uint32_t TimerIntervalms)
 {
 	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER5);
 	ROM_TimerConfigure(TIMER5_BASE, TIMER_CFG_PERIODIC);
@@ -154,7 +154,7 @@ void ConfigPWM_SStop_Throttle(void)
 	ROM_PWMGenConfigure(PWM0_BASE, PWM_GEN_2, PWM_GEN_MODE_DOWN |
                     PWM_GEN_MODE_NO_SYNC);
 
-	ui32PWMClock = SysCtlClockGet() / 32;
+	ui32PWMClock = ROM_SysCtlClockGet() / 32;
 	ui32Load = ui32PWMClock / PWM_THROTTLE;
 
 	//Sets the period of the specified PWM generator block
@@ -188,10 +188,10 @@ void ConfigPWM_Steering(void)
 	ROM_PWMGenConfigure(PWM0_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN |
                     PWM_GEN_MODE_NO_SYNC);
 	//Sets the period of the specified PWM generator block
-	ROM_PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ROM_SysCtlClockGet() / PWM_STEERING);
+	ROM_PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ROM_SysCtlClockGet() / PWM_STEERING_F);
 	//Sets the pulse width for the specified PWM output
-	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0,	(ROM_SysCtlClockGet() / PWM_STEERING-1) / 2 - 1);
-	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1,	(ROM_SysCtlClockGet() / PWM_STEERING-1) / 2 - 1);
+	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0,	(ROM_SysCtlClockGet() / PWM_STEERING_F-1) / 2 - 1);
+	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1,	(ROM_SysCtlClockGet() / PWM_STEERING_F-1) / 2 - 1);
 	//Enable specified PWM output
 	ROM_PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, true);
 	ROM_PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, true);
@@ -213,10 +213,10 @@ void ConfigPWM_Steering_usingTimer(void)
 	ROM_GPIOPinTypeTimer(GPIO_PORTB_BASE, GPIO_PIN_6|GPIO_PIN_7 );
 
 	ROM_TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR| TIMER_CFG_B_PWM | TIMER_CFG_A_PWM );
-	ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, ROM_SysCtlClockGet() / PWM_STEERING-1);
-	ROM_TimerLoadSet(TIMER0_BASE, TIMER_B, ROM_SysCtlClockGet() / PWM_STEERING-1);
-	ROM_TimerMatchSet(TIMER0_BASE, TIMER_A,TimerLoadGet(TIMER0_BASE, TIMER_A) / 2-1);
-	ROM_TimerMatchSet(TIMER0_BASE, TIMER_B,TimerLoadGet(TIMER0_BASE, TIMER_B) / 2-1);
+	ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, ROM_SysCtlClockGet() / PWM_STEERING_F-1);
+	ROM_TimerLoadSet(TIMER0_BASE, TIMER_B, ROM_SysCtlClockGet() / PWM_STEERING_F-1);
+	ROM_TimerMatchSet(TIMER0_BASE, TIMER_A,ROM_TimerLoadGet(TIMER0_BASE, TIMER_A) / 2-1);
+	ROM_TimerMatchSet(TIMER0_BASE, TIMER_B,ROM_TimerLoadGet(TIMER0_BASE, TIMER_B) / 2-1);
 	ROM_TimerControlLevel(TIMER0_BASE,TIMER_A, false);
 	ROM_TimerControlLevel(TIMER0_BASE,TIMER_B, true);
 
@@ -242,8 +242,8 @@ void ConfigPWM_SprayValve(void){
 		ROM_PWMGenConfigure(PWM0_BASE, PWM_GEN_1, PWM_GEN_MODE_DOWN |
 	                    PWM_GEN_MODE_NO_SYNC);
 
-		ui32PWMClock = SysCtlClockGet() / 32;
-		ui32Load = (ui32PWMClock / PWM_SPRAY_VALVE);
+		ui32PWMClock = ROM_SysCtlClockGet() / 32;
+		ui32Load = (ui32PWMClock / PWM_SPRAY_VALVE_F);
 
 //		//Sets the period of the specified PWM generator block
 		ROM_PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, ui32Load);
@@ -260,28 +260,28 @@ void ConfigPWM_SprayValve(void){
 void SetPWM_Steering_usingTimer(uint32_t ulBaseAddr, uint32_t ulFrequency, int32_t ucDutyCycle)
 {
 	uint32_t ulPeriod;
-	ulPeriod = SysCtlClockGet() / ulFrequency;
+	ulPeriod = ROM_SysCtlClockGet() / ulFrequency;
 	ROM_TimerLoadSet(ulBaseAddr,TIMER_A, ulPeriod-1);
 	ROM_TimerLoadSet(ulBaseAddr,TIMER_B, ulPeriod-1);
-	if (ucDutyCycle > 70)
-		ucDutyCycle = 70;
-	else if (ucDutyCycle < -70)
-		ucDutyCycle = -70;
-	ROM_TimerMatchSet(ulBaseAddr, TIMER_A, (100 + ucDutyCycle) * ulPeriod / 200 - 1);
-	ROM_TimerMatchSet(ulBaseAddr, TIMER_B, (100 + ucDutyCycle) * ulPeriod / 200 - 1);
+	if (ucDutyCycle > MAX_STEERING_DUTY)
+		ucDutyCycle = MAX_STEERING_DUTY;
+	else if (ucDutyCycle < -MAX_STEERING_DUTY)
+		ucDutyCycle = -MAX_STEERING_DUTY;
+	ROM_TimerMatchSet(ulBaseAddr, TIMER_A, (1000 + ucDutyCycle) * ulPeriod / 2000 - 1);
+	ROM_TimerMatchSet(ulBaseAddr, TIMER_B, (1000 + ucDutyCycle) * ulPeriod / 2000 - 1);
 }
 
 void SetPWM_Steering(uint32_t ulFrequency, int32_t ucDutyCycle)
 {
 	uint32_t ulPeriod;
 	ulPeriod = ROM_SysCtlClockGet() / ulFrequency;
-	if (ucDutyCycle > 90)
-		ucDutyCycle = 90;
-	else if (ucDutyCycle < -90)
-		ucDutyCycle = -90;
+	if (ucDutyCycle > MAX_STEERING_DUTY)
+		ucDutyCycle = MAX_STEERING_DUTY;
+	else if (ucDutyCycle < -MAX_STEERING_DUTY)
+		ucDutyCycle = -MAX_STEERING_DUTY;
 	ROM_PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ulPeriod - 1);
-	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, (100 + ucDutyCycle) * ulPeriod / 200 - 1);
-	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, (100 + ucDutyCycle) * ulPeriod / 200 - 1);
+	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, (1000 + ucDutyCycle) * ulPeriod / 2000 - 1);
+	ROM_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, (1000 + ucDutyCycle) * ulPeriod / 2000 - 1);
 }
 
 void SetPWM_Servo_Throttle(uint32_t ulFrequency, int32_t ucDutyCycle)

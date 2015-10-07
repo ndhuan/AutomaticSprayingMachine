@@ -7,35 +7,43 @@
 
 #include "include.h"
 
+#define DEBUG_DELTAT_STEERING
 #define STEERING_MID 122000
+#define DEADBAND_STEERING 4000
+#define T2VEL 160//50000/6s/50Hz
+
+extern float x,y,pre_x,pre_y,angle;
+
+bool flagNewGPSMsg=false,flagNewPos=false,flagControl=0;
+bool isAuto=false;
+
+#ifndef USE_QEI
+static int32_t Position = 0;
+static int32_t Speed = 0;
+static int32_t Speedtemp = 0;
+#endif
+
+static int32_t sp = 0;
 
 uint8_t MsgBuf[MAX_GPS_MSG_BYTE];
 uint32_t msgLen=0;
-extern PIDType PIDPosition;
-bool flagNewMsg=false,flagNewPos=false;
-extern float x,y,pre_x,pre_y,angle;
-bool isAuto=false;
-int32_t Position = 0;
-int32_t Speed = 0;
-#ifndef USE_QEI
-int32_t Speedtemp = 0;
-#endif
-int32_t i32Pulse_Steering;
-int32_t i32Pulse_Throttle;
-int32_t i32Pulse_SStop;
-int32_t i32Pulse_Mode;
 
-uint32_t ui32T_Edgeup_Steering, ui32T_Edgedown_Steering;
-int32_t i32DeltaT_Steering;
+static int32_t i32Pulse_Steering;
+//int32_t i32Pulse_Throttle;
+//int32_t i32Pulse_SStop;
+//int32_t i32Pulse_Mode;
 
-uint32_t ui32T_Edgeup_Throttle, ui32T_Edgedown_Throttle;
-int32_t i32DeltaT_Throttle;
+static uint32_t ui32T_Edgeup_Steering, ui32T_Edgedown_Steering;
+static int32_t i32DeltaT_Steering;
 
-uint32_t ui32T_Edgeup_SStop, ui32T_Edgedown_SStop;
-int32_t i32DeltaT_SStop;
+static uint32_t ui32T_Edgeup_Throttle, ui32T_Edgedown_Throttle;
+static int32_t i32DeltaT_Throttle;
 
-uint32_t ui32T_Edgeup_Mode, ui32T_Edgedown_Mode;
-int32_t i32DeltaT_Mode;
+static uint32_t ui32T_Edgeup_SStop, ui32T_Edgedown_SStop;
+static int32_t i32DeltaT_SStop;
+
+static uint32_t ui32T_Edgeup_Mode, ui32T_Edgedown_Mode;
+static int32_t i32DeltaT_Mode;
 
 static bool firstEdgeSteering=1;
 static bool firstEdgeThrottle=1;
@@ -55,7 +63,7 @@ void HBridgeDisable(void)
 void Throttle_WTimer2BISR(void){
 	ROM_TimerIntClear(WTIMER2_BASE, TIMER_CAPB_EVENT);
 	// Doc trang thai canh ngat
-	if (GPIOPinRead(GPIO_PORTD_BASE,GPIO_PIN_1)&GPIO_PIN_1)
+	if (ROM_GPIOPinRead(GPIO_PORTD_BASE,GPIO_PIN_1)&GPIO_PIN_1)
 		ui32T_Edgeup_Throttle = ROM_TimerValueGet(WTIMER2_BASE, TIMER_B);
 	else
 	{
@@ -92,7 +100,7 @@ void Throttle_WTimer2BISR(void){
 	}
 }
 
-void Steering_WTimer3AISR(void){//3 red: 90000->160000
+void Steering_WTimer3AISR(void){
 	ROM_TimerIntClear(WTIMER3_BASE, TIMER_CAPA_EVENT);
 	// Doc trang thai canh ngat
 	if (isAuto)
@@ -117,56 +125,33 @@ void Steering_WTimer3AISR(void){//3 red: 90000->160000
 //		UARTPutn(UART0_BASE, i32Pulse_Steering);
 //		UARTCharPut(UART0_BASE, '\n');
 
-		//UARTPutn(UART0_BASE,i32DeltaT_Steering);
-		//ROM_UARTCharPut(UART0_BASE,'\n');
+#ifdef DEBUG_DELTAT_STEERING
+		UARTPuts(UART0_BASE,"Steering:");
+		UARTPutn(UART0_BASE,i32DeltaT_Steering);
+		ROM_UARTCharPut(UART0_BASE,'\n');
+#endif
 
-		if (i32Pulse_Steering < -4000)
+		if (i32Pulse_Steering < -DEADBAND_STEERING)
 		{
-			i32Pulse_Steering = PIDPosition.SetPoint + (i32Pulse_Steering+4000)/160;
-			//i32Pulse_Steering = PIDPosition.SetPoint + (i32Pulse_Steering+2000)/100;
-			PIDPosition.Enable = 0;
-			if (i32Pulse_Steering<-25000)//-45 degree
-				PIDPosition.SetPoint = -25000;
+			i32Pulse_Steering = sp + (i32Pulse_Steering+DEADBAND_STEERING)/T2VEL;
+
+			if (i32Pulse_Steering<-MAX_STEERING_SETPOINT)
+				sp = -MAX_STEERING_SETPOINT;
 			else
-				PIDPosition.SetPoint = i32Pulse_Steering;
-			PIDPosition.Enable = 1;
+				sp = i32Pulse_Steering;
+
 		}
-		else if (i32Pulse_Steering > 4000)
+		else if (i32Pulse_Steering > DEADBAND_STEERING)
 		{
-			i32Pulse_Steering = PIDPosition.SetPoint + (i32Pulse_Steering-4000)/160;
-			//i32Pulse_Steering = PIDPosition.SetPoint + (i32Pulse_Steering-2000)/100;
-			PIDPosition.Enable = 0;
-			if (i32Pulse_Steering>25000)
-				PIDPosition.SetPoint = 25000;//45 degree
+			i32Pulse_Steering = sp + (i32Pulse_Steering-DEADBAND_STEERING)/T2VEL;
+
+			if (i32Pulse_Steering>MAX_STEERING_SETPOINT)
+				sp = MAX_STEERING_SETPOINT;
 			else
-				PIDPosition.SetPoint = i32Pulse_Steering;
-			PIDPosition.Enable = 1;
+				sp = i32Pulse_Steering;
 		}
 
-		//UARTPutn(UART0_BASE, PIDPosition.SetPoint);
-		//UARTCharPut(UART0_BASE, '\n');
-
-		//PIDPositionSet(i32Pulse_Steering);
-
-		//80000 = 1ms, 1200000 = 1.5ms, 160000=2ms
-//		if ((i32DeltaT_Steering>100000)&(i32DeltaT_Steering<140000))
-//		{
-//			LED2_OFF;
-//			LED3_ON;
-//			LED4_OFF;
-//		}
-//		else if ((i32DeltaT_Steering>140000))
-//		{
-//			LED2_OFF;
-//			LED3_OFF;
-//			LED4_ON;
-//		}
-//		else
-//		{
-//			LED2_ON;
-//			LED3_OFF;
-//			LED4_OFF;
-//		}
+		motorSet(sp,-1);
 
 	}
 }
@@ -232,45 +217,17 @@ void PID_Timer5ISR(void)
 	ROM_TimerIntClear(TIMER5_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef USE_QEI
 	//Get Velocity
-	Speed = ROM_QEIVelocityGet(QEI0_BASE) * ROM_QEIDirectionGet(QEI0_BASE);
+//	Speed = ROM_QEIVelocityGet(QEI0_BASE) * ROM_QEIDirectionGet(QEI0_BASE);
 	//Get Position
-	Position = ((int32_t)ROM_QEIPositionGet(QEI0_BASE));
+//	Position = ((int32_t)ROM_QEIPositionGet(QEI0_BASE));
 #else
 	Speed = Speedtemp;
 #endif
-	if (PIDPosition.Enable)
-	{
-#ifdef DEBUG_PID
-		static int printStep=0;
-#endif
-		if (isAuto)
-		{
-			if (PIDPosition.tempSetPoint>PIDPosition.SetPoint+PIDPosition.deltaPulse)
-				PIDPosition.SetPoint = PIDPosition.tempSetPoint-PIDPosition.deltaPulse;
-			else if (PIDPosition.tempSetPoint<PIDPosition.SetPoint-PIDPosition.deltaPulse)
-				PIDPosition.SetPoint = PIDPosition.tempSetPoint+PIDPosition.deltaPulse;
-			else
-				PIDPosition.SetPoint = PIDPosition.tempSetPoint;
-		}
-		PIDCalc(&PIDPosition, Position, 90);
-		//			SetPWM_Steering(PWM_STEERING,(long)PIDPosition.PIDResult);
-		SetPWM_Steering_usingTimer(TIMER0_BASE,PWM_STEERING,(long)PIDPosition.PIDResult );
 
-#ifdef DEBUG_PID
-		printStep++;
-		if (printStep==5)
-		{
-			UARTPutn(UART0_BASE,(long)PIDPosition.PIDResult);
-			ROM_UARTCharPut(UART0_BASE,',');
-			UARTPutn(UART0_BASE,Position);
-			ROM_UARTCharPut(UART0_BASE,'\n');
-			printStep=0;
-		}
-#endif
-	}
+	flagControl = 1;
 }
 
-void HandleMsg(uint8_t* Msg)
+void HandleGPSMsg(uint8_t* Msg)
 {
 	int i,sign=1,x_temp=0,y_temp=0;
 	static int fixCnt=0,floatCnt=0;
@@ -287,15 +244,14 @@ void HandleMsg(uint8_t* Msg)
 		floatCnt=0;
 		if (!hasFixed)
 		{
-			if (fixCnt<25)//25
+			if (fixCnt<25)
 			{
 				fixCnt++;
 				return;
 			}
-			else
+			else//25 continuous fix solutions
 			{
 				hasFixed=true;
-				LED_BLUE_ON;
 			}
 		}
 	}
@@ -306,7 +262,7 @@ void HandleMsg(uint8_t* Msg)
 		{
 			if (floatCnt<25)
 				floatCnt++;
-			else
+			else//25 continuous float solutions after fix
 			{
 				hasFixed=false;
 				SSTOP_STOP;
@@ -356,8 +312,8 @@ void UartGPSIntHandler()
 	{
 		if ((MsgBuf[numBytes++]=ROM_UARTCharGetNonBlocking(UART_GPS))=='\n')
 		{
-			HandleMsg(MsgBuf);
-			flagNewMsg=true;
+			HandleGPSMsg(MsgBuf);
+			flagNewGPSMsg=true;
 			msgLen=numBytes;
 			numBytes = 0;
 		}
@@ -366,10 +322,56 @@ void UartGPSIntHandler()
 
 	}
 }
+#define START_BYTE 0XAA
+#define STOP_CMD 0x01
+#define SET_PID_DISTANCE_PARAMS 0x02
+#define SET_PID_ANGLE_PARAMS 0x03
+#define AUTO_MODE_CMD 0X04
+#define MANUAL_MODE_CMD 0x05
+
+static void processRFMsg(uint8_t *msg)
+{
+	switch (msg[1])
+	{
+	case STOP_CMD:
+		SSTOP_STOP;
+		break;
+	case AUTO_MODE_CMD:
+		isAuto = true;
+		break;
+	case MANUAL_MODE_CMD:
+		isAuto = false;
+		break;
+	}
+}
+//frame=START_BYTE + CMD_ID + LENGTH_BYTE + payload
 void UartRFIntHandler()
 {
+	static uint8_t msgRF[20];
+	static uint32_t msgRFLen=0,numBytes=0;
 	uint32_t status = ROM_UARTIntStatus(UART_RF,true);
 	ROM_UARTIntClear(UART_RF,status);
+	while (ROM_UARTCharsAvail(UART_RF))
+	{
+		int8_t temp=ROM_UARTCharGetNonBlocking(UART_RF);
+		if (numBytes==0)
+		{
+			if (temp==START_BYTE)
+			{
+				msgRF[numBytes++]=temp;
+			}
+			continue;
+		}
+		msgRF[numBytes++]=temp;
+		if (numBytes==3)
+			msgRFLen = msgRF[2] + 3;
+		if ((numBytes==msgRFLen) && (msgRFLen!=0))
+		{
+			processRFMsg(msgRF);
+			numBytes=0;
+			msgRFLen=0;
+		}
+	}
 }
 #ifndef USE_QEI
 void EncoderISR(void)

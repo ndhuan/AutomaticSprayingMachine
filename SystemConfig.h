@@ -15,7 +15,7 @@ void ConfigMyUART(void);
 void ConfigPulseTimer_Steering_Mode(void);
 void ConfigPulseTimer_SStop_Throttle(void);
 
-void ConfigPIDTimer(uint32_t TimerIntervalms);
+void ConfigControlTimer(uint32_t TimerIntervalms);
 void ConfigEncoder(void);
 
 void ConfigPWM_SStop_Throttle(void);

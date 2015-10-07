@@ -6,13 +6,12 @@
 
 //#define DEBUG_LOCAL_POS
 
-extern bool flagNewMsg,flagNewPos,isAuto;
-bool flagFirstPos=true;
+extern bool flagNewGPSMsg,flagNewPos,flagControl,isAuto;
 extern uint8_t MsgBuf[MAX_GPS_MSG_BYTE];
 extern uint32_t msgLen;
+
+bool flagFirstPos=true;
 float x=0.0,y=0.0,pre_x=0.0,pre_y=0.0,angle=0.0;
-
-
 
 void main(void) {
 	//Enable FPU
@@ -33,13 +32,12 @@ void main(void) {
 	ConfigPulseTimer_Steering_Mode();
 	ConfigPulseTimer_SStop_Throttle();
 
-	ConfigPIDTimer(PID_PERIOD_MS);
+	ConfigControlTimer(CONTROL_PERIOD_MS);
 
 	ROM_IntMasterEnable();
 
-	InitPID();
 	HBridgeEnable();//PE2
-	PIDPositionSet(0,0);
+	/init pid distance & angle, set setpoint
 	SSTOP_START;
 
 
@@ -59,17 +57,26 @@ void main(void) {
 			if (flagFirstPos)
 			{
 				flagFirstPos = false;
-				continue;
 			}
-			//angle = atan2f(y-pre_y,x-pre_x);
-
+			else
+			{
+				if (isAuto)
+				{
+					angle = atan2f(y-pre_y,x-pre_x);
+					PathFollow(x,y,angle);
+				}
+			}
 		}
-		if (flagNewMsg)
+		if (flagControl)
+		{
+			flagControl = 0;
+			motorControl();
+		}
+		if (flagNewGPSMsg)//send gps frame to PC
 		{
 			static int printStep=0;
 			LED_BLUE_TOGGLE;
-			flagNewMsg=0;
-			//truyen frame gps ve may
+			flagNewGPSMsg=0;
 			printStep++;
 			if (printStep==2)
 			{

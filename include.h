@@ -29,9 +29,13 @@
 
 #include "SystemConfig.h"
 #include "define.h"
-#include "PID.h"
+#include "PID/PID.h"
 #include "MYUART.h"
 #include "InterruptHandler.h"
-#include "RF.h"
+#include "RF/RF.h"
+#include "MotorControl/MRC_pos/MRC_pos.h"
+#include "MotorControl/LMSEstimate_pos/LMSEstimate_pos.h"
+#include "MotorControl/MotorControl.h"
+#include "PAthFollowing/PathFollowing.h"
 
 #endif /* INCLUDE_H_ */
