@@ -31,8 +31,8 @@ typedef struct
 void pidReset(PIDType *pidName);
 void pidSet(PIDType *pidName, int32_t setPoint);
 void pidCalc(PIDType *pidName, int32_t feedback, float maxResponse); //T (ms)
-void initPID(PIDType *PIDname,float Kp, float Ki, float Kd);
-
+void initPID(PIDType *pidName,float Kp, float Ki, float Kd);
+void pidSetParams(PIDType *pidName,float Kp, float Ki, float Kd);
 
 
 #endif /* PID_H_ */

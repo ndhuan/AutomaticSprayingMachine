@@ -7,10 +7,21 @@
 
 #include "include.h"
 
+#define START_BYTE (char)0XAA
+//#define STOP_CMD (char)0x01
+//#define START_CMD (char)0x02
+//#define SET_PID_DISTANCE_PARAMS (char)0x03
+//#define SET_PID_ANGLE_PARAMS (char)0x04
+//#define AUTO_MODE_CMD (char)0X05
+//#define MANUAL_MODE_CMD (char)0x06
+
+#define PID_SCALE 100000
+
 #define DEBUG_DELTAT_STEERING
-#define STEERING_MID 122000
+#define STEERING_MID 120000//thay doi theo pin ;D
 #define DEADBAND_STEERING 4000
 #define T2VEL 160//50000/6s/50Hz
+
 
 extern float x,y,pre_x,pre_y,angle;
 
@@ -22,6 +33,15 @@ static int32_t Position = 0;
 static int32_t Speed = 0;
 static int32_t Speedtemp = 0;
 #endif
+
+enum CMD_ID{
+	STOP_CMD=1,
+	START_CMD,
+	SET_PID_DISTANCE_PARAMS,
+	SET_PID_ANGLE_PARAMS,
+	AUTO_MODE_CMD,
+	MANUAL_MODE_CMD
+};
 
 static int32_t sp = 0;
 
@@ -123,7 +143,7 @@ void Steering_WTimer3AISR(void){
 			return;
 
 //		UARTPutn(UART0_BASE, i32Pulse_Steering);
-//		UARTCharPut(UART0_BASE, '\n');
+//		ROM_UARTCharPut(UART0_BASE, '\n');
 
 #ifdef DEBUG_DELTAT_STEERING
 		UARTPuts(UART0_BASE,"Steering:");
@@ -150,7 +170,11 @@ void Steering_WTimer3AISR(void){
 			else
 				sp = i32Pulse_Steering;
 		}
-
+#ifdef DEBUG_SETPOINT
+		UARTPuts(UART0_BASE, "SP:");
+		UARTPutn(UART0_BASE, sp);
+		ROM_UARTCharPut(UART0_BASE, '\n');
+#endif
 		motorSet(sp,-1);
 
 	}
@@ -212,7 +236,7 @@ void Mode_WTimer3BISR(void){
 	}
 }
 
-void PID_Timer5ISR(void)
+void Control_Timer5ISR(void)
 {
 	ROM_TimerIntClear(TIMER5_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef USE_QEI
@@ -239,40 +263,43 @@ void HandleGPSMsg(uint8_t* Msg)
 			(Msg[4]!='/'))
 		return;
 
-	if (Msg[71] == '1')//fix sol
-	{
-		floatCnt=0;
-		if (!hasFixed)
-		{
-			if (fixCnt<25)
-			{
-				fixCnt++;
-				return;
-			}
-			else//25 continuous fix solutions
-			{
-				hasFixed=true;
-			}
-		}
-	}
-	else
-	{
-		fixCnt = 0;
-		if (hasFixed)
-		{
-			if (floatCnt<25)
-				floatCnt++;
-			else//25 continuous float solutions after fix
-			{
-				hasFixed=false;
-				SSTOP_STOP;
-				LED_RED_ON;
-				return;
-			}
-		}
-		else
-			return;
-	}
+	if (Msg[71] != '1')//not fix
+		return;
+
+//	if (Msg[71] == '1')//fix sol
+//	{
+//		floatCnt=0;
+//		if (!hasFixed)
+//		{
+//			if (fixCnt<25)
+//			{
+//				fixCnt++;
+//				return;
+//			}
+//			else//25 continuous fix solutions
+//			{
+//				hasFixed=true;
+//			}
+//		}
+//	}
+//	else
+//	{
+//		fixCnt = 0;
+//		if (hasFixed)
+//		{
+//			if (floatCnt<25)
+//				floatCnt++;
+//			else//25 continuous float solutions after fix
+//			{
+//				hasFixed=false;
+//				SSTOP_STOP;
+//				LED_RED_ON;
+//				return;
+//			}
+//		}
+//		else
+//			return;
+//	}
 
 	//get local coordinate
 	for (i=24;i<38;i++)
@@ -322,19 +349,18 @@ void UartGPSIntHandler()
 
 	}
 }
-#define START_BYTE 0XAA
-#define STOP_CMD 0x01
-#define SET_PID_DISTANCE_PARAMS 0x02
-#define SET_PID_ANGLE_PARAMS 0x03
-#define AUTO_MODE_CMD 0X04
-#define MANUAL_MODE_CMD 0x05
+
 
 static void processRFMsg(uint8_t *msg)
 {
+	LED1_TOGGLE;
 	switch (msg[1])
 	{
 	case STOP_CMD:
 		SSTOP_STOP;
+		break;
+	case START_CMD:
+		SSTOP_START;
 		break;
 	case AUTO_MODE_CMD:
 		isAuto = true;
@@ -342,18 +368,39 @@ static void processRFMsg(uint8_t *msg)
 	case MANUAL_MODE_CMD:
 		isAuto = false;
 		break;
+	case SET_PID_DISTANCE_PARAMS:
+	{
+		int32_t Kp,Ki,Kd;
+		msg += 3;
+		Kp=(msg[0]|msg[1]<<8|msg[2]<<16|msg[3]<<24);
+		Ki=(msg[4]|msg[5]<<8|msg[6]<<16|msg[7]<<24);
+		Kd=(msg[8]|msg[9]<<8|msg[10]<<16|msg[11]<<24);
+		setParamsDistance((float)Kp/PID_SCALE,(float)Ki/PID_SCALE,(float)Kd/PID_SCALE);
+		break;
+	}
+	case SET_PID_ANGLE_PARAMS:
+	{
+		int32_t Kp,Ki,Kd;
+		msg += 3;
+		Kp=(msg[0]|msg[1]<<8|msg[2]<<16|msg[3]<<24);
+		Ki=(msg[4]|msg[5]<<8|msg[6]<<16|msg[7]<<24);
+		Kd=(msg[8]|msg[9]<<8|msg[10]<<16|msg[11]<<24);
+		setParamsAngle((float)Kp/PID_SCALE,(float)Ki/PID_SCALE,(float)Kd/PID_SCALE);
+		break;
+	}
 	}
 }
 //frame=START_BYTE + CMD_ID + LENGTH_BYTE + payload
 void UartRFIntHandler()
 {
 	static uint8_t msgRF[20];
-	static uint32_t msgRFLen=0,numBytes=0;
+	static uint32_t msgRFLen=0;
+	static uint32_t numBytes=0;
 	uint32_t status = ROM_UARTIntStatus(UART_RF,true);
 	ROM_UARTIntClear(UART_RF,status);
 	while (ROM_UARTCharsAvail(UART_RF))
 	{
-		int8_t temp=ROM_UARTCharGetNonBlocking(UART_RF);
+		char temp=ROM_UARTCharGetNonBlocking(UART_RF);
 		if (numBytes==0)
 		{
 			if (temp==START_BYTE)

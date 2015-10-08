@@ -25,6 +25,8 @@ void main(void) {
 	RFInit();
 	ConfigEncoder();//PD6,PD7
 
+	LMSEstimate_pos_initialize();
+	MRC_pos_initialize();
 	ConfigPWM_Steering_usingTimer();//PB6, PB7
 	ConfigPWM_SStop_Throttle();//PD1
 	ConfigPWM_SprayValve();
@@ -36,8 +38,10 @@ void main(void) {
 
 	ROM_IntMasterEnable();
 
+	PathFollowInit();
+
 	HBridgeEnable();//PE2
-	/init pid distance & angle, set setpoint
+
 	SSTOP_START;
 
 

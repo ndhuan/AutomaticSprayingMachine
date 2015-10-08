@@ -9,10 +9,10 @@
 #define SOFT_START_PERIOD_POS 20
 #define START_DUTY 200
 
-static int32_t setPoint;
+static int32_t setPoint=0;
 static int32_t delta=0;
 static uint32_t count=0;
-static int32_t pos;
+static int32_t pos=0;
 void motorSet(int32_t tmpSetPoint, int32_t tmpDelta)
 {
 	setPoint = tmpSetPoint;

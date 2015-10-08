@@ -128,7 +128,7 @@ void ConfigControlTimer(uint32_t TimerIntervalms)
 	ROM_TimerLoadSet(TIMER5_BASE, TIMER_A, (ROM_SysCtlClockGet() / 1000) * TimerIntervalms - 1);	//Interval: //1:150
 
 	ROM_IntMasterEnable();
-	TimerIntRegister(TIMER5_BASE, TIMER_A, &PID_Timer5ISR);
+	TimerIntRegister(TIMER5_BASE, TIMER_A, &Control_Timer5ISR);
 	ROM_IntEnable(INT_TIMER5A);
 	ROM_TimerIntEnable(TIMER5_BASE, TIMER_TIMA_TIMEOUT);
 	ROM_TimerIntClear(TIMER5_BASE, TIMER_TIMA_TIMEOUT);

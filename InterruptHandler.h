@@ -16,7 +16,7 @@ void Steering_WTimer3AISR(void);
 void SStop_WTimer2AISR(void);
 void Mode_WTimer3BISR(void);
 
-void PID_Timer5ISR(void);
+void Control_Timer5ISR(void);
 
 void UartGPSIntHandler(void);
 void UartRFIntHandler(void);

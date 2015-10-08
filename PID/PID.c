@@ -22,43 +22,29 @@ void pidSet(PIDType *pidName, int32_t setPoint)
 	(*pidName).Enable = 1;
 }
 
-
-
-void pidCalc(PIDType *PIDname, int32_t Feedback, float MaxResponse)
+void pidCalc(PIDType *pidName, int32_t Feedback, float MaxResponse)
 {
 	static float k1,k2,k3;
 
-	(*PIDname).PIDError = (*PIDname).SetPoint - Feedback;
+	(*pidName).PIDError = (*pidName).SetPoint - Feedback;
 
-	k1=(*PIDname).Kp+(*PIDname).Ki+(*PIDname).Kd;
-	k2=-(*PIDname).Kp-2*(*PIDname).Kd;
-	k3=(*PIDname).Kd;
+	k1=(*pidName).Kp+(*pidName).Ki+(*pidName).Kd;
+	k2=-(*pidName).Kp-2*(*pidName).Kd;
+	k3=(*pidName).Kd;
 
-	(*PIDname).PIDResult=(*PIDname).PIDResultTemp +
-			k1*(*PIDname).PIDError +
-			k2*(*PIDname).PIDErrorTemp1 +
-			k3*(*PIDname).PIDErrorTemp2;
-	(*PIDname).PIDErrorTemp2=(*PIDname).PIDErrorTemp1;
-	(*PIDname).PIDErrorTemp1=(*PIDname).PIDError;
+	(*pidName).PIDResult=(*pidName).PIDResultTemp +
+			k1*(*pidName).PIDError +
+			k2*(*pidName).PIDErrorTemp1 +
+			k3*(*pidName).PIDErrorTemp2;
+	(*pidName).PIDErrorTemp2=(*pidName).PIDErrorTemp1;
+	(*pidName).PIDErrorTemp1=(*pidName).PIDError;
 
-	if ((*PIDname).PIDResult > MaxResponse)
-		(*PIDname).PIDResult = MaxResponse;
-	else if ((*PIDname).PIDResult < -MaxResponse)
-		(*PIDname).PIDResult = -MaxResponse;
+	if ((*pidName).PIDResult > MaxResponse)
+		(*pidName).PIDResult = MaxResponse;
+	else if ((*pidName).PIDResult < -MaxResponse)
+		(*pidName).PIDResult = -MaxResponse;
 
-	(*PIDname).PIDResultTemp = (*PIDname).PIDResult;
-}
-
-
-void initPID(PIDType *PIDname,float Kp, float Ki, float Kd)
-{
-	(*PIDname).Kp=Kp;
-	(*PIDname).Ki=Ki;
-	(*PIDname).Kd=Kd;
-	(*PIDname).PIDErrorTemp1=0;
-	(*PIDname).PIDErrorTemp2=0;
-	(*PIDname).PIDResultTemp=0;
-	(*PIDname).Enable = 0;
+	(*pidName).PIDResultTemp = (*pidName).PIDResult;
 }
 
 void pidReset(PIDType *pidName)
@@ -66,4 +52,18 @@ void pidReset(PIDType *pidName)
 	(*pidName).PIDErrorTemp1=0;
 	(*pidName).PIDErrorTemp2=0;
 	(*pidName).PIDResultTemp=0;
+}
+
+void pidSetParams(PIDType *pidName,float Kp, float Ki, float Kd)
+{
+	(*pidName).Kp=Kp;
+	(*pidName).Ki=Ki;
+	(*pidName).Kd=Kd;
+	pidReset(pidName);
+}
+
+void initPID(PIDType *pidName,float Kp, float Ki, float Kd)
+{
+	pidSetParams(pidName,Kp, Ki, Kd);
+	(*pidName).Enable = 0;
 }

@@ -16,7 +16,7 @@
  *    3. Traceability
  * Validation result: Passed (10), Warnings (2), Error (0)
  */
-
+#include "include.h"
 #include "MRC.h"
 #include "MRC_private.h"
 //POT 0%, Tqd=0.001s, T=0.005; wn=4000

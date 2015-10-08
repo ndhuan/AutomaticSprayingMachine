@@ -10,6 +10,7 @@
 
 void PathFollowInit();
 void PathFollow(float x, float y, float angle);
-
+void setParamsDistance(float Kp,float Ki,float Kd);
+void setParamsAngle(float Kp,float Ki,float Kd);
 
 #endif /* SRC_PATHFOLLOWING_PATHFOLLOWING_H_ */
