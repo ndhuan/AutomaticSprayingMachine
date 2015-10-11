@@ -8,6 +8,18 @@
 #ifndef DEFINE_H_
 #define DEFINE_H_
 
+#define PID_STEERING
+//#define STR_STEERING
+#define MAX_STEERING_SETPOINT 25000
+#define MAX_STEERING_DUTY 750//0-1000
+#ifdef STR_STEERING
+	#define CONTROL_PERIOD_MS	20
+#else//pid
+	#define CONTROL_PERIOD_MS	5
+#endif
+#define PIDVER_LOOP		2
+
+//constant
 #define PI (float)3.14159265
 #define RAD2PULSES (float)31830.98862//200000/2PI
 #define DEGREE2PULSES (float)(5000/9)
@@ -31,14 +43,8 @@
 #define PWM_SPRAY_VALVE_F 	50
 #define PWM_STEERING_F		20000	//H-Bridge Freq (Hz)
 
-#define MAX_STEERING_SETPOINT 25000
-#define MAX_STEERING_DUTY 750//0-1000
-
-#define CONTROL_PERIOD_MS	20
-#define PIDVER_LOOP		2
-
 #define UART_GPS UART1_BASE//b0-b1
-#define UART_RF UART3_BASE//c6-c7
+#define UART_RF UART0_BASE//c6-c7
 #define UART_DEBUG UART0_BASE
 
 #define LED1_ON ROM_GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4,0XFF)

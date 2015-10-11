@@ -17,7 +17,7 @@
 
 #define PID_SCALE 100000
 
-#define DEBUG_DELTAT_STEERING
+//#define DEBUG_DELTAT_STEERING
 #define STEERING_MID 120000//thay doi theo pin ;D
 #define DEADBAND_STEERING 4000
 #define T2VEL 160//50000/6s/50Hz
@@ -27,6 +27,7 @@ extern float x,y,pre_x,pre_y,angle;
 
 bool flagNewGPSMsg=false,flagNewPos=false,flagControl=0;
 bool isAuto=false;
+bool isRunning=true;
 
 #ifndef USE_QEI
 static int32_t Position = 0;
@@ -159,6 +160,7 @@ void Steering_WTimer3AISR(void){
 				sp = -MAX_STEERING_SETPOINT;
 			else
 				sp = i32Pulse_Steering;
+			motorSet(sp,-1);
 
 		}
 		else if (i32Pulse_Steering > DEADBAND_STEERING)
@@ -169,13 +171,14 @@ void Steering_WTimer3AISR(void){
 				sp = MAX_STEERING_SETPOINT;
 			else
 				sp = i32Pulse_Steering;
+			motorSet(sp,-1);
 		}
 #ifdef DEBUG_SETPOINT
 		UARTPuts(UART0_BASE, "SP:");
 		UARTPutn(UART0_BASE, sp);
 		ROM_UARTCharPut(UART0_BASE, '\n');
 #endif
-		motorSet(sp,-1);
+
 
 	}
 }
@@ -204,7 +207,8 @@ void SStop_WTimer2AISR(void){
 
 		if ((i32DeltaT_SStop<125000) && (i32DeltaT_SStop>115000))
 			SSTOP_STOP;
-		else if ((i32DeltaT_SStop>135000) && (i32DeltaT_SStop<145000))
+		else if ((i32DeltaT_SStop>135000) && (i32DeltaT_SStop<145000) && isRunning)
+			//both RF receiver and PC gui must start
 			SSTOP_START;
 	}
 }
@@ -353,14 +357,15 @@ void UartGPSIntHandler()
 
 static void processRFMsg(uint8_t *msg)
 {
-	LED1_TOGGLE;
+	LED4_TOGGLE;
 	switch (msg[1])
 	{
 	case STOP_CMD:
 		SSTOP_STOP;
+		isRunning = false;
 		break;
 	case START_CMD:
-		SSTOP_START;
+		isRunning = true;
 		break;
 	case AUTO_MODE_CMD:
 		isAuto = true;

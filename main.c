@@ -25,8 +25,6 @@ void main(void) {
 	RFInit();
 	ConfigEncoder();//PD6,PD7
 
-	LMSEstimate_pos_initialize();
-	MRC_pos_initialize();
 	ConfigPWM_Steering_usingTimer();//PB6, PB7
 	ConfigPWM_SStop_Throttle();//PD1
 	ConfigPWM_SprayValve();
@@ -36,14 +34,14 @@ void main(void) {
 
 	ConfigControlTimer(CONTROL_PERIOD_MS);
 
-	ROM_IntMasterEnable();
-
+	motorControlInit();
 	PathFollowInit();
 
 	HBridgeEnable();//PE2
 
 	SSTOP_START;
 
+	ROM_IntMasterEnable();
 
 	while(1)
 	{

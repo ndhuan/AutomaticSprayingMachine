@@ -10,6 +10,6 @@
 
 void motorSet(int32_t setPoint, int32_t delta);
 void motorControl();
-
+void motorControlInit();
 
 #endif /* SRC_MOTORCONTROL_MOTORCONTROL_H_ */

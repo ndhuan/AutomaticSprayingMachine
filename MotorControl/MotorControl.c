@@ -6,6 +6,8 @@
  */
 #include "include.h"
 
+
+
 #define SOFT_START_PERIOD_POS 20
 #define START_DUTY 200
 
@@ -13,6 +15,20 @@ static int32_t setPoint=0;
 static int32_t delta=0;
 static uint32_t count=0;
 static int32_t pos=0;
+#ifdef PID_STEERING
+PIDType pidSteering;
+#endif
+void motorControlInit()
+{
+#ifdef PID_STEERING
+	initPID(&pidSteering,1.0,0.005,0.0);
+	pidSet(&pidSteering, 0);
+#else
+	LMSEstimate_pos_initialize();
+	MRC_pos_initialize();
+#endif
+}
+
 void motorSet(int32_t tmpSetPoint, int32_t tmpDelta)
 {
 	setPoint = tmpSetPoint;
@@ -23,14 +39,21 @@ void motorSet(int32_t tmpSetPoint, int32_t tmpDelta)
 
 	delta = tmpDelta;
 	if (delta <= 0)
+#ifdef PID_STEERING
+		pidSteering.SetPoint = setPoint;
+#else
 		MRC_pos_U.uc = setPoint;
+#endif
 }
 
 void motorControl()
 {
 	int i;
 	pos = (int)ROM_QEIPositionGet(QEI0_BASE);
-
+#ifdef PID_STEERING
+	pidCalc(&pidSteering,pos,MAX_STEERING_DUTY);
+	SetPWM_Steering_usingTimer(TIMER0_BASE,PWM_STEERING_F,(long)pidSteering.PIDResult);
+#else
 	if (delta>0)
 	{
 		if (MRC_pos_U.uc < setPoint-delta)
@@ -64,6 +87,7 @@ void motorControl()
 	{
 		MRC_pos_U.theta[i] = LMSEstimate_pos_Y.theta[i];
 	}
+#endif
 }
 
 
