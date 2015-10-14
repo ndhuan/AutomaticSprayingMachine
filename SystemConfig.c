@@ -378,6 +378,14 @@ void ConfigMyUART(void)
 	UART_Type.ISR = &UartRFIntHandler;
 	ConfigUART(&UART_Type);
 
+	UART_Type.PortName = UART_THROTTLE;
+	UART_Type.BaudRate = 115200;
+	UART_Type.DataBits = 8;
+	UART_Type.Parity = None;
+	UART_Type.StopBits = 1;
+	UART_Type.ISR = 0;
+	ConfigUART(&UART_Type);
+
 //	UART_Type.PortName = UART_DEBUG;
 //	UART_Type.BaudRate = 115200;
 //	UART_Type.DataBits = 8;

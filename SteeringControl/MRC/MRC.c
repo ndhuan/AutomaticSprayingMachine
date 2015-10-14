@@ -16,9 +16,9 @@
  *    3. Traceability
  * Validation result: Passed (10), Warnings (2), Error (0)
  */
+#include <SteeringControl/MRC/MRC.h>
+#include <SteeringControl/MRC/MRC_private.h>
 #include "include.h"
-#include "MRC.h"
-#include "MRC_private.h"
 //POT 0%, Tqd=0.001s, T=0.005; wn=4000
 //#define am1 -9.86e-5
 //#define am2 2.016e-9

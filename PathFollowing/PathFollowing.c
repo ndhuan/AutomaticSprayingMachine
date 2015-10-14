@@ -111,25 +111,25 @@ void FollowLine(float x, float y, float angle, float signedDistance, float angle
 	//PIDPositionSet(0.5*SubMod(angle_dest,angle)*RAD2PULSES+0.5*signedDistance,DELTA_POS_STRAIGHT);
 	pidCalc(&pidAngle, SubMod(angle_dest,angle)*RAD2PULSES, 10000);
 	pidCalc(&pidDistance, signedDistance, 10000);
-	motorSet(pidAngle.PIDResult+pidDistance.PIDResult,DELTA_POS_STRAIGHT);
+	steeringSet(pidAngle.PIDResult+pidDistance.PIDResult,DELTA_POS_STRAIGHT);
 }
 void TurnRight(float x, float y, float angle)
 {
 	//giam toc do
 	//quay
 	if (fabsf(SubMod(angle,angle_dest))>PI/2)
-		motorSet((int32_t)(-TURN_ANGLE*DEGREE2PULSES),DELTA_POS_TURN);
+		steeringSet((int32_t)(-TURN_ANGLE*DEGREE2PULSES),DELTA_POS_TURN);
 	else
-		motorSet(0,DELTA_POS_TURN);
+		steeringSet(0,DELTA_POS_TURN);
 }
 void TurnLeft(float x, float y, float angle)
 {
 	//giam toc do
 	//quay
 	if (fabsf(SubMod(angle,angle_dest))>PI/2)
-		motorSet((int32_t)(TURN_ANGLE*DEGREE2PULSES),DELTA_POS_TURN);
+		steeringSet((int32_t)(TURN_ANGLE*DEGREE2PULSES),DELTA_POS_TURN);
 	else
-		motorSet(0,DELTA_POS_TURN);
+		steeringSet(0,DELTA_POS_TURN);
 }
 void PathFollow(float x, float y, float angle)
 {

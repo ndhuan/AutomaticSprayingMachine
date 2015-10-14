@@ -34,7 +34,7 @@ void main(void) {
 
 	ConfigControlTimer(CONTROL_PERIOD_MS);
 
-	motorControlInit();
+	steeringControlInit();
 	PathFollowInit();
 
 	HBridgeEnable();//PE2
@@ -68,11 +68,6 @@ void main(void) {
 					PathFollow(x,y,angle);
 				}
 			}
-		}
-		if (flagControl)
-		{
-			flagControl = 0;
-			motorControl();
 		}
 		if (flagNewGPSMsg)//send gps frame to PC
 		{

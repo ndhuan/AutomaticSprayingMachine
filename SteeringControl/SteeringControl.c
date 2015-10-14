@@ -6,19 +6,16 @@
  */
 #include "include.h"
 
-
-
 #define SOFT_START_PERIOD_POS 20
 #define START_DUTY 200
 
 static int32_t setPoint=0;
 static int32_t delta=0;
-static uint32_t count=0;
 static int32_t pos=0;
 #ifdef PID_STEERING
 PIDType pidSteering;
 #endif
-void motorControlInit()
+void steeringControlInit()
 {
 #ifdef PID_STEERING
 	initPID(&pidSteering,1.0,0.005,0.0);
@@ -29,7 +26,7 @@ void motorControlInit()
 #endif
 }
 
-void motorSet(int32_t tmpSetPoint, int32_t tmpDelta)
+void steeringSet(int32_t tmpSetPoint, int32_t tmpDelta)
 {
 	setPoint = tmpSetPoint;
 	if (setPoint > MAX_STEERING_SETPOINT)
@@ -46,14 +43,16 @@ void motorSet(int32_t tmpSetPoint, int32_t tmpDelta)
 #endif
 }
 
-void motorControl()
+void steeringControl()
 {
-	int i;
-	pos = (int)ROM_QEIPositionGet(QEI0_BASE);
 #ifdef PID_STEERING
+	pos = (int)ROM_QEIPositionGet(QEI0_BASE);
 	pidCalc(&pidSteering,pos,MAX_STEERING_DUTY);
 	SetPWM_Steering_usingTimer(TIMER0_BASE,PWM_STEERING_F,(long)pidSteering.PIDResult);
 #else
+	int i;
+	static uint32_t count=0;
+	pos = (int)ROM_QEIPositionGet(QEI0_BASE);
 	if (delta>0)
 	{
 		if (MRC_pos_U.uc < setPoint-delta)

@@ -33,9 +33,19 @@
 #include "MYUART.h"
 #include "InterruptHandler.h"
 #include "RF/RF.h"
-#include "MotorControl/MRC_pos/MRC_pos.h"
-#include "MotorControl/LMSEstimate_pos/LMSEstimate_pos.h"
-#include "MotorControl/MotorControl.h"
-#include "PAthFollowing/PathFollowing.h"
+#include "PathFollowing/PathFollowing.h"
+#include "SteeringControl/LMSEstimate_pos/LMSEstimate_pos.h"
+#include "SteeringControl/MRC_pos/MRC_pos.h"
+#include "SteeringControl/SteeringControl.h"
+
+enum CMD_ID{
+	STOP_CMD=1,
+	START_CMD,
+	SET_PID_DISTANCE_PARAMS,
+	SET_PID_ANGLE_PARAMS,
+	AUTO_MODE_CMD,
+	MANUAL_MODE_CMD,
+	SETPOINT_CMD
+};
 
 #endif /* INCLUDE_H_ */

@@ -19,7 +19,7 @@
 
 #ifndef RTW_HEADER_LMSEstimate_pos_private_h_
 #define RTW_HEADER_LMSEstimate_pos_private_h_
-#include "rtwtypes.h"
+#include "../../SteeringControl/LMSEstimate_pos/rtwtypes.h"
 #ifndef __RTWTYPES_H__
 #error This file requires rtwtypes.h to be included
 #else

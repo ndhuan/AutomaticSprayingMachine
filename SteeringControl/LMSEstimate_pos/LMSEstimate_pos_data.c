@@ -17,8 +17,8 @@
  * Validation result: Not run
  */
 
-#include "LMSEstimate_pos.h"
-#include "LMSEstimate_pos_private.h"
+#include <SteeringControl/LMSEstimate_pos/LMSEstimate_pos.h>
+#include <SteeringControl/LMSEstimate_pos/LMSEstimate_pos_private.h>
 
 /* Constant parameters (auto storage) */
 const ConstParam_LMSEstimate_pos LMSEstimate_pos_ConstP = {

@@ -17,8 +17,8 @@
  * Validation result: Passed (10), Warnings (2), Error (0)
  */
 
-#include "LMSEstimate.h"
-#include "LMSEstimate_private.h"
+#include <SteeringControl/LMSEstimate/LMSEstimate.h>
+#include <SteeringControl/LMSEstimate/LMSEstimate_private.h>
 
 #define VARIABLE_FORGET_FACTOR
 

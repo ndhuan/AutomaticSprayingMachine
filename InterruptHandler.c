@@ -7,20 +7,18 @@
 
 #include "include.h"
 
-#define START_BYTE (char)0XAA
-//#define STOP_CMD (char)0x01
-//#define START_CMD (char)0x02
-//#define SET_PID_DISTANCE_PARAMS (char)0x03
-//#define SET_PID_ANGLE_PARAMS (char)0x04
-//#define AUTO_MODE_CMD (char)0X05
-//#define MANUAL_MODE_CMD (char)0x06
+//#define DEBUG_DELTAT_STEERING
 
 #define PID_SCALE 100000
 
-//#define DEBUG_DELTAT_STEERING
 #define STEERING_MID 120000//thay doi theo pin ;D
 #define DEADBAND_STEERING 4000
 #define T2VEL 160//50000/6s/50Hz
+
+#define THROTTLE_SCALING 1000
+#define THROTTLE_OFFSET 0
+
+#define START_BYTE (char)0XAA
 
 
 extern float x,y,pre_x,pre_y,angle;
@@ -34,15 +32,6 @@ static int32_t Position = 0;
 static int32_t Speed = 0;
 static int32_t Speedtemp = 0;
 #endif
-
-enum CMD_ID{
-	STOP_CMD=1,
-	START_CMD,
-	SET_PID_DISTANCE_PARAMS,
-	SET_PID_ANGLE_PARAMS,
-	AUTO_MODE_CMD,
-	MANUAL_MODE_CMD
-};
 
 static int32_t sp = 0;
 
@@ -96,9 +85,11 @@ void Throttle_WTimer2BISR(void){
 
 		ui32T_Edgedown_Throttle = ROM_TimerValueGet(WTIMER2_BASE, TIMER_B);
 
-		i32DeltaT_Throttle = (int32_t)(ui32T_Edgedown_Throttle - ui32T_Edgeup_Throttle - 120000);
-		if ((i32DeltaT_Throttle>-40000) && (i32DeltaT_Throttle<40000))
-			SetPWM_Servo_Throttle(PWM_THROTTLE,i32DeltaT_Throttle/1000+85);
+		i32DeltaT_Throttle = (int32_t)(ui32T_Edgedown_Throttle - ui32T_Edgeup_Throttle);
+		if ((i32DeltaT_Throttle>70000) && (i32DeltaT_Throttle<170000))
+		{
+			throttleSet(i32DeltaT_Throttle/THROTTLE_SCALING+THROTTLE_OFFSET);
+		}
 //		if ((i32DeltaT_Steering>100000)&(i32DeltaT_Steering<140000))
 //		{
 //			LED2_ON;
@@ -160,7 +151,7 @@ void Steering_WTimer3AISR(void){
 				sp = -MAX_STEERING_SETPOINT;
 			else
 				sp = i32Pulse_Steering;
-			motorSet(sp,-1);
+			steeringSet(sp,-1);
 
 		}
 		else if (i32Pulse_Steering > DEADBAND_STEERING)
@@ -171,7 +162,7 @@ void Steering_WTimer3AISR(void){
 				sp = MAX_STEERING_SETPOINT;
 			else
 				sp = i32Pulse_Steering;
-			motorSet(sp,-1);
+			steeringSet(sp,-1);
 		}
 #ifdef DEBUG_SETPOINT
 		UARTPuts(UART0_BASE, "SP:");
@@ -252,7 +243,7 @@ void Control_Timer5ISR(void)
 	Speed = Speedtemp;
 #endif
 
-	flagControl = 1;
+	steeringControl();
 }
 
 void HandleGPSMsg(uint8_t* Msg)
@@ -395,17 +386,17 @@ static void processRFMsg(uint8_t *msg)
 	}
 	}
 }
-//frame=START_BYTE + CMD_ID + LENGTH_BYTE + payload
+//frame=START_BYTE + CMD_ID + LENGTH_BYTE + payload (LSB first)
 void UartRFIntHandler()
 {
 	static uint8_t msgRF[20];
 	static uint32_t msgRFLen=0;
 	static uint32_t numBytes=0;
-	uint32_t status = ROM_UARTIntStatus(UART_RF,true);
-	ROM_UARTIntClear(UART_RF,status);
-	while (ROM_UARTCharsAvail(UART_RF))
+	uint32_t status = ROM_UARTIntStatus(UART_RF_BASE,true);
+	ROM_UARTIntClear(UART_RF_BASE,status);
+	while (ROM_UARTCharsAvail(UART_RF_BASE))
 	{
-		char temp=ROM_UARTCharGetNonBlocking(UART_RF);
+		char temp=ROM_UARTCharGetNonBlocking(UART_RF_BASE);
 		if (numBytes==0)
 		{
 			if (temp==START_BYTE)

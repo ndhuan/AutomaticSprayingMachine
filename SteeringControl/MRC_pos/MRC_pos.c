@@ -17,9 +17,9 @@
  * Validation result: Passed (9), Warnings (3), Error (0)
  */
 
+#include <SteeringControl/MRC_pos/MRC_pos.h>
+#include <SteeringControl/MRC_pos/MRC_pos_private.h>
 #include "define.h"
-#include "MRC_pos.h"
-#include "MRC_pos_private.h"
 
 #define bm1 1.0
 #define bm2 4.372e-8
