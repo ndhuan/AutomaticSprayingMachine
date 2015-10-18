@@ -88,16 +88,7 @@ typedef char_T byte_T;
 #define MAX_uint32_T                   ((uint32_T)(0xFFFFFFFFU))
 #define MIN_uint32_T                   ((uint32_T)(0U))
 
-/* Logical type definitions */
-#if (!defined(__cplusplus)) && (!defined(__true_false_are_keywords))
-#  ifndef false
-#   define false                       (0U)
-#  endif
 
-#  ifndef true
-#   define true                        (1U)
-#  endif
-#endif
 
 /*
  * Simulink Coder assumes the code is compiled on a target using a 2's complement representation

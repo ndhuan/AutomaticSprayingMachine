@@ -6,20 +6,25 @@
  */
 #include "include.h"
 
+#ifdef STR_STEERING
 #define SOFT_START_PERIOD_POS 20
 #define START_DUTY 200
+#endif
 
 static int32_t setPoint=0;
 static int32_t delta=0;
 static int32_t pos=0;
+
 #ifdef PID_STEERING
 PIDType pidSteering;
 #endif
 void steeringControlInit()
 {
 #ifdef PID_STEERING
-	initPID(&pidSteering,1.0,0.005,0.0);
+	initPID(&pidSteering,0.15,0.001,0.0);
+	enablePID(&pidSteering);
 	pidSet(&pidSteering, 0);
+
 #else
 	LMSEstimate_pos_initialize();
 	MRC_pos_initialize();
@@ -46,7 +51,20 @@ void steeringSet(int32_t tmpSetPoint, int32_t tmpDelta)
 void steeringControl()
 {
 #ifdef PID_STEERING
+	int32_t currentSp = pidSteering.SetPoint;
 	pos = (int)ROM_QEIPositionGet(QEI0_BASE);
+	if (delta > 0)
+	{
+		if (currentSp + delta < setPoint)
+			pidSet(&pidSteering,currentSp + delta);
+		else if (currentSp - delta > setPoint)
+			pidSet(&pidSteering,currentSp - delta);
+		else
+		{
+			pidSet(&pidSteering,setPoint);
+			delta = -1;
+		}
+	}
 	pidCalc(&pidSteering,pos,MAX_STEERING_DUTY);
 	SetPWM_Steering_usingTimer(TIMER0_BASE,PWM_STEERING_F,(long)pidSteering.PIDResult);
 #else

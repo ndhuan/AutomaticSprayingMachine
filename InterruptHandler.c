@@ -7,13 +7,16 @@
 
 #include "include.h"
 
-//#define DEBUG_DELTAT_STEERING
+#define DEBUG_DELTAT_STEERING
+//#define DEBUG_THROTTLE_SETPOINT
 
 #define PID_SCALE 100000
 
 #define STEERING_MID 120000//thay doi theo pin ;D
 #define DEADBAND_STEERING 4000
 #define T2VEL 160//50000/6s/50Hz
+#define DEADBAND_THROTTLE 4000
+#define PULSE2VEL 100
 
 #define THROTTLE_SCALING 1000
 #define THROTTLE_OFFSET 0
@@ -33,21 +36,18 @@ static int32_t Speed = 0;
 static int32_t Speedtemp = 0;
 #endif
 
-static int32_t sp = 0;
-
 uint8_t MsgBuf[MAX_GPS_MSG_BYTE];
 uint32_t msgLen=0;
 
-static int32_t i32Pulse_Steering;
 //int32_t i32Pulse_Throttle;
 //int32_t i32Pulse_SStop;
 //int32_t i32Pulse_Mode;
 
 static uint32_t ui32T_Edgeup_Steering, ui32T_Edgedown_Steering;
-static int32_t i32DeltaT_Steering;
+static int32_t i32DeltaT_Steering,i32Pulse_Steering;
 
 static uint32_t ui32T_Edgeup_Throttle, ui32T_Edgedown_Throttle;
-static int32_t i32DeltaT_Throttle;
+static int32_t i32DeltaT_Throttle,i32Pulse_Throttle;
 
 static uint32_t ui32T_Edgeup_SStop, ui32T_Edgedown_SStop;
 static int32_t i32DeltaT_SStop;
@@ -77,6 +77,7 @@ void Throttle_WTimer2BISR(void){
 		ui32T_Edgeup_Throttle = ROM_TimerValueGet(WTIMER2_BASE, TIMER_B);
 	else
 	{
+		static int32_t sp=0,pre_sp=0;
 		if (firstEdgeThrottle)
 		{
 			firstEdgeThrottle=0;
@@ -86,29 +87,31 @@ void Throttle_WTimer2BISR(void){
 		ui32T_Edgedown_Throttle = ROM_TimerValueGet(WTIMER2_BASE, TIMER_B);
 
 		i32DeltaT_Throttle = (int32_t)(ui32T_Edgedown_Throttle - ui32T_Edgeup_Throttle);
-		if ((i32DeltaT_Throttle>70000) && (i32DeltaT_Throttle<170000))
-		{
-			throttleSet(i32DeltaT_Throttle/THROTTLE_SCALING+THROTTLE_OFFSET);
-		}
-//		if ((i32DeltaT_Steering>100000)&(i32DeltaT_Steering<140000))
-//		{
-//			LED2_ON;
-//			LED3_OFF;
-//			LED4_OFF;
-//		}
-//		else if ((i32DeltaT_Steering>140000))
-//		{
-//			LED2_OFF;
-//			LED3_ON;
-//			LED4_OFF;
-//		}
-//		else
-//		{
-//			LED2_OFF;
-//			LED3_OFF;
-//			LED4_ON;
-//		}
 
+		if ((i32DeltaT_Throttle<70000) || (i32DeltaT_Throttle>170000))
+			return;
+
+#ifdef DEBUG_DELTAT_THROTTLE
+		UARTPuts(UART0_BASE,"Throttle");
+		UARTPutn(UART0_BASE,i32DeltaT_Throttle);
+		ROM_UARTCharPut(UART0_BASE,'\n');
+#endif
+
+
+		sp = (i32DeltaT_Throttle-80000)/PULSE2VEL;
+		if (sp<0)
+			sp=0;
+		else if (sp>1000)
+			sp=1000;
+		if ((sp - pre_sp > 2)||(sp - pre_sp < -2))
+			throttleSet(sp);
+		pre_sp = sp;
+
+#ifdef DEBUG_THROTTLE_SETPOINT
+		UARTPuts(UART0_BASE, "Throttle SP:");
+		UARTPutn(UART0_BASE, sp);
+		ROM_UARTCharPut(UART0_BASE, '\n');
+#endif
 	}
 }
 
@@ -121,6 +124,7 @@ void Steering_WTimer3AISR(void){
 		ui32T_Edgeup_Steering = ROM_TimerValueGet(WTIMER3_BASE, TIMER_A);
 	else
 	{
+		static int32_t sp = 0;
 		if (firstEdgeSteering)
 		{
 			firstEdgeSteering=0;
@@ -134,8 +138,8 @@ void Steering_WTimer3AISR(void){
 		if ((i32Pulse_Steering<-50000) || (i32Pulse_Steering>50000))
 			return;
 
-//		UARTPutn(UART0_BASE, i32Pulse_Steering);
-//		ROM_UARTCharPut(UART0_BASE, '\n');
+		//		UARTPutn(UART0_BASE, i32Pulse_Steering);
+		//		ROM_UARTCharPut(UART0_BASE, '\n');
 
 #ifdef DEBUG_DELTAT_STEERING
 		UARTPuts(UART0_BASE,"Steering:");
@@ -164,8 +168,8 @@ void Steering_WTimer3AISR(void){
 				sp = i32Pulse_Steering;
 			steeringSet(sp,-1);
 		}
-#ifdef DEBUG_SETPOINT
-		UARTPuts(UART0_BASE, "SP:");
+#ifdef DEBUG_STEERING_SETPOINT
+		UARTPuts(UART0_BASE, "Steer SP:");
 		UARTPutn(UART0_BASE, sp);
 		ROM_UARTCharPut(UART0_BASE, '\n');
 #endif
@@ -193,8 +197,8 @@ void SStop_WTimer2AISR(void){
 
 		i32DeltaT_SStop = (int32_t)(ui32T_Edgedown_SStop - ui32T_Edgeup_SStop);
 
-//				UARTPutn(UART0_BASE,i32DeltaT_SStop);
-//				UARTCharPut(UART0_BASE,'\n');
+		//				UARTPutn(UART0_BASE,i32DeltaT_SStop);
+		//				UARTCharPut(UART0_BASE,'\n');
 
 		if ((i32DeltaT_SStop<125000) && (i32DeltaT_SStop>115000))
 			SSTOP_STOP;
@@ -221,13 +225,13 @@ void Mode_WTimer3BISR(void){
 
 		i32DeltaT_Mode = (int32_t)(ui32T_Edgedown_Mode - ui32T_Edgeup_Mode);
 
-//				UARTPutn(UART0_BASE,i32DeltaT_SStop);
-//				UARTCharPut(UART0_BASE,'\n');
+		//				UARTPutn(UART0_BASE,i32DeltaT_SStop);
+		//				UARTCharPut(UART0_BASE,'\n');
 
-//		if ((i32DeltaT_Mode<125000) && (i32DeltaT_Mode>115000))
-//			isAuto=true;
-//		else if ((i32DeltaT_Mode>135000) && (i32DeltaT_Mode<145000))
-//			isAuto=false;
+		//		if ((i32DeltaT_Mode<125000) && (i32DeltaT_Mode>115000))
+		//			isAuto=true;
+		//		else if ((i32DeltaT_Mode>135000) && (i32DeltaT_Mode<145000))
+		//			isAuto=false;
 	}
 }
 
@@ -236,9 +240,9 @@ void Control_Timer5ISR(void)
 	ROM_TimerIntClear(TIMER5_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef USE_QEI
 	//Get Velocity
-//	Speed = ROM_QEIVelocityGet(QEI0_BASE) * ROM_QEIDirectionGet(QEI0_BASE);
+	//	Speed = ROM_QEIVelocityGet(QEI0_BASE) * ROM_QEIDirectionGet(QEI0_BASE);
 	//Get Position
-//	Position = ((int32_t)ROM_QEIPositionGet(QEI0_BASE));
+	//	Position = ((int32_t)ROM_QEIPositionGet(QEI0_BASE));
 #else
 	Speed = Speedtemp;
 #endif
@@ -249,8 +253,8 @@ void Control_Timer5ISR(void)
 void HandleGPSMsg(uint8_t* Msg)
 {
 	int i,sign=1,x_temp=0,y_temp=0;
-	static int fixCnt=0,floatCnt=0;
-	static bool hasFixed=false;
+	//	static int fixCnt=0,floatCnt=0;
+	//	static bool hasFixed=false;
 	//check time
 	if ((Msg[0]!='2') || (Msg[1]!='0') ||
 			(Msg[2]<'0') || (Msg[2]>'9') ||
@@ -261,40 +265,40 @@ void HandleGPSMsg(uint8_t* Msg)
 	if (Msg[71] != '1')//not fix
 		return;
 
-//	if (Msg[71] == '1')//fix sol
-//	{
-//		floatCnt=0;
-//		if (!hasFixed)
-//		{
-//			if (fixCnt<25)
-//			{
-//				fixCnt++;
-//				return;
-//			}
-//			else//25 continuous fix solutions
-//			{
-//				hasFixed=true;
-//			}
-//		}
-//	}
-//	else
-//	{
-//		fixCnt = 0;
-//		if (hasFixed)
-//		{
-//			if (floatCnt<25)
-//				floatCnt++;
-//			else//25 continuous float solutions after fix
-//			{
-//				hasFixed=false;
-//				SSTOP_STOP;
-//				LED_RED_ON;
-//				return;
-//			}
-//		}
-//		else
-//			return;
-//	}
+	//	if (Msg[71] == '1')//fix sol
+	//	{
+	//		floatCnt=0;
+	//		if (!hasFixed)
+	//		{
+	//			if (fixCnt<25)
+	//			{
+	//				fixCnt++;
+	//				return;
+	//			}
+	//			else//25 continuous fix solutions
+	//			{
+	//				hasFixed=true;
+	//			}
+	//		}
+	//	}
+	//	else
+	//	{
+	//		fixCnt = 0;
+	//		if (hasFixed)
+	//		{
+	//			if (floatCnt<25)
+	//				floatCnt++;
+	//			else//25 continuous float solutions after fix
+	//			{
+	//				hasFixed=false;
+	//				SSTOP_STOP;
+	//				LED_RED_ON;
+	//				return;
+	//			}
+	//		}
+	//		else
+	//			return;
+	//	}
 
 	//get local coordinate
 	for (i=24;i<38;i++)
@@ -392,11 +396,11 @@ void UartRFIntHandler()
 	static uint8_t msgRF[20];
 	static uint32_t msgRFLen=0;
 	static uint32_t numBytes=0;
-	uint32_t status = ROM_UARTIntStatus(UART_RF_BASE,true);
-	ROM_UARTIntClear(UART_RF_BASE,status);
-	while (ROM_UARTCharsAvail(UART_RF_BASE))
+	uint32_t status = ROM_UARTIntStatus(UART_RF,true);
+	ROM_UARTIntClear(UART_RF,status);
+	while (ROM_UARTCharsAvail(UART_RF))
 	{
-		char temp=ROM_UARTCharGetNonBlocking(UART_RF_BASE);
+		char temp=ROM_UARTCharGetNonBlocking(UART_RF);
 		if (numBytes==0)
 		{
 			if (temp==START_BYTE)

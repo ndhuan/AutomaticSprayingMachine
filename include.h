@@ -37,7 +37,7 @@
 #include "SteeringControl/LMSEstimate_pos/LMSEstimate_pos.h"
 #include "SteeringControl/MRC_pos/MRC_pos.h"
 #include "SteeringControl/SteeringControl.h"
-
+#include "ThrottleControl/ThrottleControl.h"
 enum CMD_ID{
 	STOP_CMD=1,
 	START_CMD,

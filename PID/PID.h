@@ -33,6 +33,7 @@ void pidSet(PIDType *pidName, int32_t setPoint);
 void pidCalc(PIDType *pidName, int32_t feedback, float maxResponse); //T (ms)
 void initPID(PIDType *pidName,float Kp, float Ki, float Kd);
 void pidSetParams(PIDType *pidName,float Kp, float Ki, float Kd);
-
+void enablePID(PIDType *pidName);
+void disablePID(PIDType *pidName);
 
 #endif /* PID_H_ */

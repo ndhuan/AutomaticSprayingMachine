@@ -121,7 +121,7 @@ void ConfigPulseTimer_Steering_Mode(void){
 	IntPrioritySet(INT_WTIMER3B, 0x40);
 }
 
-void ConfigControlTimer(uint32_t TimerIntervalms)
+void ConfigSteeringControlTimer(uint32_t TimerIntervalms)
 {
 	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER5);
 	ROM_TimerConfigure(TIMER5_BASE, TIMER_CFG_PERIODIC);

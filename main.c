@@ -32,9 +32,10 @@ void main(void) {
 	ConfigPulseTimer_Steering_Mode();
 	ConfigPulseTimer_SStop_Throttle();
 
-	ConfigControlTimer(CONTROL_PERIOD_MS);
+	ConfigSteeringControlTimer(CONTROL_PERIOD_MS);
 
 	steeringControlInit();
+	throttleControlInit();
 	PathFollowInit();
 
 	HBridgeEnable();//PE2
