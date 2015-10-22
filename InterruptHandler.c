@@ -7,14 +7,20 @@
 
 #include "include.h"
 
-#define DEBUG_DELTAT_STEERING
+//#define DEBUG_DELTAT_STEERING
 //#define DEBUG_THROTTLE_SETPOINT
 
+#if defined(DEBUG_DELTAT_STEERING)
+	|| defined(DEBUG_DELTAT_SETPOINT)
+	|| defined(DEBUG_DELTAT_THROTTLE)
+	|| defined(DEBUG_THROTTLE_SETPOINT)
+static int printStep=0;
+#endif
 #define PID_SCALE 100000
 
-#define STEERING_MID 120000//thay doi theo pin ;D
+#define STEERING_MID 126000//thay doi theo pin ;D
 #define DEADBAND_STEERING 4000
-#define T2VEL 160//50000/6s/50Hz
+#define T2VEL 130//50000/6s/50Hz
 #define DEADBAND_THROTTLE 4000
 #define PULSE2VEL 100
 
@@ -44,7 +50,7 @@ uint32_t msgLen=0;
 //int32_t i32Pulse_Mode;
 
 static uint32_t ui32T_Edgeup_Steering, ui32T_Edgedown_Steering;
-static int32_t i32DeltaT_Steering,i32Pulse_Steering;
+static int32_t i32DeltaT_Steering,i32Pulse_Steering,i32SteeringMid=0;
 
 static uint32_t ui32T_Edgeup_Throttle, ui32T_Edgedown_Throttle;
 static int32_t i32DeltaT_Throttle,i32Pulse_Throttle;
@@ -92,9 +98,12 @@ void Throttle_WTimer2BISR(void){
 			return;
 
 #ifdef DEBUG_DELTAT_THROTTLE
-		UARTPuts(UART0_BASE,"Throttle");
-		UARTPutn(UART0_BASE,i32DeltaT_Throttle);
-		ROM_UARTCharPut(UART0_BASE,'\n');
+		printStep++;
+		if (printStep==5)
+		{
+			RFprint("Throttle sp:%d\r\n", i32DeltaT_Throttle);
+			printStep = 0;
+		}
 #endif
 
 
@@ -108,9 +117,12 @@ void Throttle_WTimer2BISR(void){
 		pre_sp = sp;
 
 #ifdef DEBUG_THROTTLE_SETPOINT
-		UARTPuts(UART0_BASE, "Throttle SP:");
-		UARTPutn(UART0_BASE, sp);
-		ROM_UARTCharPut(UART0_BASE, '\n');
+		printStep++;
+		if (printStep==5)
+		{
+			RFprint("Throttle sp:%d\r\n", sp);
+			printStep = 0;
+		}
 #endif
 	}
 }
@@ -124,7 +136,7 @@ void Steering_WTimer3AISR(void){
 		ui32T_Edgeup_Steering = ROM_TimerValueGet(WTIMER3_BASE, TIMER_A);
 	else
 	{
-		static int32_t sp = 0;
+		static int32_t sp = 0, i=0;
 		if (firstEdgeSteering)
 		{
 			firstEdgeSteering=0;
@@ -134,7 +146,19 @@ void Steering_WTimer3AISR(void){
 		ui32T_Edgedown_Steering = ROM_TimerValueGet(WTIMER3_BASE, TIMER_A);
 
 		i32DeltaT_Steering = (int32_t)(ui32T_Edgedown_Steering - ui32T_Edgeup_Steering);
-		i32Pulse_Steering =  i32DeltaT_Steering-STEERING_MID;
+
+		if (i<10)
+		{
+			i32SteeringMid += i32DeltaT_Steering;
+			i++;
+			if (i==10)
+			{
+				i32SteeringMid = i32SteeringMid/10;
+			}
+			return;
+		}
+
+		i32Pulse_Steering =  i32DeltaT_Steering-i32SteeringMid;
 		if ((i32Pulse_Steering<-50000) || (i32Pulse_Steering>50000))
 			return;
 
@@ -142,9 +166,12 @@ void Steering_WTimer3AISR(void){
 		//		ROM_UARTCharPut(UART0_BASE, '\n');
 
 #ifdef DEBUG_DELTAT_STEERING
-		UARTPuts(UART0_BASE,"Steering:");
-		UARTPutn(UART0_BASE,i32DeltaT_Steering);
-		ROM_UARTCharPut(UART0_BASE,'\n');
+		printStep++;
+		if (printStep==5)
+		{
+			RFprint("Steering:%d\r\n",i32DeltaT_Steering);
+			printStep = 0;
+		}
 #endif
 
 		if (i32Pulse_Steering < -DEADBAND_STEERING)
@@ -169,9 +196,12 @@ void Steering_WTimer3AISR(void){
 			steeringSet(sp,-1);
 		}
 #ifdef DEBUG_STEERING_SETPOINT
-		UARTPuts(UART0_BASE, "Steer SP:");
-		UARTPutn(UART0_BASE, sp);
-		ROM_UARTCharPut(UART0_BASE, '\n');
+		printStep++;
+		if (printStep==5)
+		{
+			RFprint("Steering sp:%d\r\n", sp);
+			printStep = 0;
+		}
 #endif
 
 

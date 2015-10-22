@@ -82,17 +82,17 @@ void PathFollowInit()
 	//
 	// 0	1
 
-	x_corner[0] = 1*D_SCALE;//1m
-	y_corner[0] = 1*D_SCALE;
+	x_corner[0] = 8.0*D_SCALE;//1m
+	y_corner[0] = 0.3*D_SCALE;
 
-	x_corner[1] = 16*D_SCALE;
-	y_corner[1] = 1*D_SCALE;
+	x_corner[1] = 13.0*D_SCALE;
+	y_corner[1] = -8.0*D_SCALE;
 
-	x_corner[2] = 16*D_SCALE;
-	y_corner[2] = 11*D_SCALE;
+	x_corner[2] = 18.0*D_SCALE;
+	y_corner[2] = -5.0*D_SCALE;
 
-	x_corner[3] = 1*D_SCALE;
-	y_corner[3] = 11*D_SCALE;
+	x_corner[3] = 16.0*D_SCALE;
+	y_corner[3] = 4.0*D_SCALE;
 
 	angle_orig = atan2f(y_corner[3]-y_corner[0],x_corner[3]-x_corner[0]);
 	angle_dest=angle_orig;

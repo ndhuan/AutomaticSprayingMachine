@@ -96,7 +96,38 @@ UARTPrimeTransmit(uint32_t ui32Base)
         MAP_TimerIntEnable(TIMER_RF, TIMER_TIMA_TIMEOUT);
     }
 }
-extern int RFsend(uint8_t* pcBuf,uint32_t ui32Len)
+
+static void TimerRFIntHandler()
+{
+	uint32_t ui32Ints = MAP_TimerIntStatus(TIMER_RF, true);
+	MAP_TimerIntClear(TIMER_RF, ui32Ints);
+    UARTPrimeTransmit(UART_RF);
+
+     //
+     // If the output buffer is empty, turn off the transmit interrupt.
+     //
+     if(TX_BUFFER_EMPTY)
+     {
+         MAP_TimerIntDisable(TIMER_RF, TIMER_TIMA_TIMEOUT);
+     }
+}
+
+extern void RFinit()
+{
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+	ROM_TimerConfigure(TIMER_RF, TIMER_CFG_PERIODIC);
+	ROM_TimerLoadSet(TIMER_RF, TIMER_A, (ROM_SysCtlClockGet() / 1000) * TIMER_RF_INTERVAL_MS - 1);
+
+	ROM_IntMasterEnable();
+	TimerIntRegister(TIMER_RF, TIMER_A, &TimerRFIntHandler);
+	ROM_IntEnable(INT_TIMER1A);
+	//ROM_TimerIntEnable(TIMER_RF, TIMER_TIMA_TIMEOUT);
+	ROM_TimerIntClear(TIMER_RF, TIMER_TIMA_TIMEOUT);
+	ROM_TimerEnable(TIMER_RF, TIMER_A);
+
+}
+
+extern int RFsend(const uint8_t* pcBuf,uint32_t ui32Len)
 {
 	uint32_t uIdx;
 	for (uIdx=0 ; uIdx<ui32Len ; uIdx++)
@@ -129,31 +160,28 @@ extern int RFsend(uint8_t* pcBuf,uint32_t ui32Len)
 	//
 	return(uIdx);
 }
-static void TimerRFIntHandler()
+
+extern void RFprint(const char * restrict format, ...)
 {
-	uint32_t ui32Ints = MAP_TimerIntStatus(TIMER_RF, true);
-	MAP_TimerIntClear(TIMER_RF, ui32Ints);
-    UARTPrimeTransmit(UART_RF);
+	volatile char Tx_Buf[512];
+    va_list arg;
 
-     //
-     // If the output buffer is empty, turn off the transmit interrupt.
-     //
-     if(TX_BUFFER_EMPTY)
-     {
-         MAP_TimerIntDisable(TIMER_RF, TIMER_TIMA_TIMEOUT);
-     }
-}
-extern void RFInit()
-{
-	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
-	ROM_TimerConfigure(TIMER_RF, TIMER_CFG_PERIODIC);
-	ROM_TimerLoadSet(TIMER_RF, TIMER_A, (ROM_SysCtlClockGet() / 1000) * TIMER_RF_INTERVAL_MS - 1);
+    memset((void *)Tx_Buf, 0, sizeof(Tx_Buf));
+    //
+    // Start the varargs processing.
+    //
+    va_start(arg, format);
 
-	ROM_IntMasterEnable();
-	TimerIntRegister(TIMER_RF, TIMER_A, &TimerRFIntHandler);
-	ROM_IntEnable(INT_TIMER1A);
-	//ROM_TimerIntEnable(TIMER_RF, TIMER_TIMA_TIMEOUT);
-	ROM_TimerIntClear(TIMER_RF, TIMER_TIMA_TIMEOUT);
-	ROM_TimerEnable(TIMER_RF, TIMER_A);
+    //
+    // Call vsnprintf to perform the conversion.  Use a large number for the
+    // buffer size.
+    //
+    uvsnprintf((char *)Tx_Buf, 0xffff, format, arg);
 
+    //
+    // End the varargs processing.
+    //
+    va_end(arg);
+
+    RFsend((const uint8_t *)Tx_Buf, strlen((const char *)Tx_Buf));
 }

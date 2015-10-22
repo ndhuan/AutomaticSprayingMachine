@@ -8,9 +8,9 @@
 #ifndef RF_H_
 #define RF_H_
 
-extern void RFInit();
-extern int RFsend(uint8_t* pcBuf,uint32_t ui32Len);
-
+extern void RFinit();
+extern int RFsend(const uint8_t* pcBuf,uint32_t ui32Len);
+extern void RFprint(const char * restrict format, ...);
 
 
 #endif /* RF_H_ */

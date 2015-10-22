@@ -33,6 +33,7 @@
 #include "MYUART.h"
 #include "InterruptHandler.h"
 #include "RF/RF.h"
+#include "RF/ustdlib.h"
 #include "PathFollowing/PathFollowing.h"
 #include "SteeringControl/LMSEstimate_pos/LMSEstimate_pos.h"
 #include "SteeringControl/MRC_pos/MRC_pos.h"
