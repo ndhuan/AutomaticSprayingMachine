@@ -11,9 +11,9 @@
 //#define DEBUG_THROTTLE_SETPOINT
 
 #if defined(DEBUG_DELTAT_STEERING)
-	|| defined(DEBUG_DELTAT_SETPOINT)
-	|| defined(DEBUG_DELTAT_THROTTLE)
-	|| defined(DEBUG_THROTTLE_SETPOINT)
+|| defined(DEBUG_DELTAT_SETPOINT)
+|| defined(DEBUG_DELTAT_THROTTLE)
+|| defined(DEBUG_THROTTLE_SETPOINT)
 static int printStep=0;
 #endif
 #define PID_SCALE 100000
@@ -283,8 +283,8 @@ void Control_Timer5ISR(void)
 void HandleGPSMsg(uint8_t* Msg)
 {
 	int i,sign=1,x_temp=0,y_temp=0;
-	//	static int fixCnt=0,floatCnt=0;
-	//	static bool hasFixed=false;
+	static int fixCnt=0,floatCnt=0;
+	static bool hasFixed=false;
 	//check time
 	if ((Msg[0]!='2') || (Msg[1]!='0') ||
 			(Msg[2]<'0') || (Msg[2]>'9') ||
@@ -292,43 +292,25 @@ void HandleGPSMsg(uint8_t* Msg)
 			(Msg[4]!='/'))
 		return;
 
-	if (Msg[71] != '1')//not fix
-		return;
+	//	if (Msg[71] != '1')//not fix
+	//		return;
 
-	//	if (Msg[71] == '1')//fix sol
-	//	{
-	//		floatCnt=0;
-	//		if (!hasFixed)
-	//		{
-	//			if (fixCnt<25)
-	//			{
-	//				fixCnt++;
-	//				return;
-	//			}
-	//			else//25 continuous fix solutions
-	//			{
-	//				hasFixed=true;
-	//			}
-	//		}
-	//	}
-	//	else
-	//	{
-	//		fixCnt = 0;
-	//		if (hasFixed)
-	//		{
-	//			if (floatCnt<25)
-	//				floatCnt++;
-	//			else//25 continuous float solutions after fix
-	//			{
-	//				hasFixed=false;
-	//				SSTOP_STOP;
-	//				LED_RED_ON;
-	//				return;
-	//			}
-	//		}
-	//		else
-	//			return;
-	//	}
+	if (Msg[71] == '1')//fix sol
+	{
+		if (!hasFixed)
+		{
+			if (fixCnt<25)
+			{
+				fixCnt++;
+				return;
+			}
+			else//25 continuous fix solutions
+			{
+				hasFixed=true;
+			}
+		}
+	}
+
 
 	//get local coordinate
 	for (i=24;i<38;i++)
