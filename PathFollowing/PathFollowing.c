@@ -8,6 +8,7 @@
 
 #define FOLLOW_ALGORITHM_PID
 //#define FOLLOW_ALGORITHM_P
+#define _DEBUG_PID
 
 #define LINE_DISTANCE (float)5.0
 #define TURN_DISTANCE (float)2.0
@@ -111,6 +112,9 @@ void FollowLine(float x, float y, float angle, float signedDistance, float angle
 	//PIDPositionSet(0.5*SubMod(angle_dest,angle)*RAD2PULSES+0.5*signedDistance,DELTA_POS_STRAIGHT);
 	pidCalc(&pidAngle, SubMod(angle_dest,angle)*RAD2PULSES, 10000);
 	pidCalc(&pidDistance, signedDistance, 10000);
+#ifdef _DEBUG_PID
+	RFprint("pid %d,%d",(int)pidAngle.PIDResult,(int)pidDistance.PIDResult);
+#endif
 	steeringSet(pidAngle.PIDResult+pidDistance.PIDResult,DELTA_POS_STRAIGHT);
 }
 void TurnRight(float x, float y, float angle)
