@@ -22,7 +22,7 @@ static int printStep=0;
 #define DEADBAND_STEERING 4000
 #define T2VEL 130//50000/6s/50Hz
 #define DEADBAND_THROTTLE 4000
-#define PULSE2VEL 100
+#define PULSE2VEL 50
 
 #define THROTTLE_SCALING 1000
 #define THROTTLE_OFFSET 0
@@ -107,9 +107,9 @@ void Throttle_WTimer2BISR(void){
 #endif
 
 
-		sp = (i32DeltaT_Throttle-80000)/PULSE2VEL;
-		if (sp<0)
-			sp=0;
+		sp = (i32DeltaT_Throttle-120000)/PULSE2VEL;
+		if (sp<-1000)
+			sp=-1000;
 		else if (sp>1000)
 			sp=1000;
 		if ((sp - pre_sp > 2)||(sp - pre_sp < -2))
@@ -278,6 +278,7 @@ void Control_Timer5ISR(void)
 #endif
 
 	steeringControl();
+	LED_RED_TOGGLE;
 }
 
 void HandleGPSMsg(uint8_t* Msg)
@@ -292,8 +293,7 @@ void HandleGPSMsg(uint8_t* Msg)
 			(Msg[4]!='/'))
 		return;
 
-	//	if (Msg[71] != '1')//not fix
-	//		return;
+//	hasFixed = true;
 
 	if (Msg[71] == '1')//fix sol
 	{
@@ -311,35 +311,37 @@ void HandleGPSMsg(uint8_t* Msg)
 		}
 	}
 
-
-	//get local coordinate
-	for (i=24;i<38;i++)
+	if (hasFixed)
 	{
-		if (Msg[i] == '-')
-			sign = -1;
-		else if ((Msg[i]>='0') && (Msg[i]<='9'))
-			x_temp = (x_temp<<3) + (x_temp<<1) + Msg[i]-'0';
-		else if ((Msg[i]!=' ') && (Msg[i]!='.'))
-			return;
-	}
-	x_temp *= sign;
-	for (i=39;i<53;i++)
-	{
-		if (Msg[i] == '-')
-			sign = -1;
-		else if ((Msg[i]>='0') && (Msg[i]<='9'))
-			y_temp = (y_temp<<3) + (y_temp<<1) + Msg[i]-'0';
-		else if ((Msg[i]!=' ') && (Msg[i]!='.'))
-			return;
-	}
-	y_temp *= sign;
+		//get local coordinate
+		for (i=24;i<38;i++)
+		{
+			if (Msg[i] == '-')
+				sign = -1;
+			else if ((Msg[i]>='0') && (Msg[i]<='9'))
+				x_temp = (x_temp<<3) + (x_temp<<1) + Msg[i]-'0';
+			else if ((Msg[i]!=' ') && (Msg[i]!='.'))
+				return;
+		}
+		x_temp *= sign;
+		for (i=39;i<53;i++)
+		{
+			if (Msg[i] == '-')
+				sign = -1;
+			else if ((Msg[i]>='0') && (Msg[i]<='9'))
+				y_temp = (y_temp<<3) + (y_temp<<1) + Msg[i]-'0';
+			else if ((Msg[i]!=' ') && (Msg[i]!='.'))
+				return;
+		}
+		y_temp *= sign;
 
-	pre_x = x;
-	pre_y = y;
-	x = x_temp;
-	y = y_temp;
+		pre_x = x;
+		pre_y = y;
+		x = x_temp;
+		y = y_temp;
 
-	flagNewPos = true;
+		flagNewPos = true;
+	}
 }
 void UartGPSIntHandler()
 {
@@ -364,7 +366,7 @@ void UartGPSIntHandler()
 
 static void processRFMsg(uint8_t *msg)
 {
-	LED4_TOGGLE;
+	//LED4_TOGGLE;
 	switch (msg[1])
 	{
 	case STOP_CMD:

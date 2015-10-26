@@ -363,7 +363,7 @@ void ConfigEncoder(void)
 void ConfigMyUART(void)
 {
 	UART_Type.PortName = UART_GPS;
-	UART_Type.BaudRate = 230400;
+	UART_Type.BaudRate = 115200;
 	UART_Type.DataBits = 8;
 	UART_Type.Parity = None;
 	UART_Type.StopBits = 1;
