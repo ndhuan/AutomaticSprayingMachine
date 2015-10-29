@@ -15,7 +15,7 @@ void pidSet(PIDType *pidName, int32_t setPoint)
 
 void pidCalc(PIDType *pidName, int32_t Feedback, float MaxResponse)
 {
-	static float k1,k2,k3;
+	float k1,k2,k3;
 	if (pidName->Enable)
 	{
 		(*pidName).PIDError = (*pidName).SetPoint - Feedback;

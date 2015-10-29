@@ -16,6 +16,7 @@ void ConfigPulseTimer_Steering_Mode(void);
 void ConfigPulseTimer_SStop_Throttle(void);
 
 void ConfigSteeringControlTimer(uint32_t TimerIntervalms);
+void ConfigHomeTimeoutTimer();
 void ConfigEncoder(void);
 
 void ConfigPWM_SStop_Throttle(void);
@@ -29,5 +30,6 @@ void SetPWM_Steering(uint32_t ulFrequency, int32_t ucDutyCycle);
 void SetPWM_Servo_SprayValve(uint32_t ulFrequency, int32_t ucDutyCycle);
 void SetPWM_Steering_usingTimer(uint32_t ulBaseAddr, uint32_t ulFrequency, int32_t ucDutyCycle);
 
+void Config_Button();
 
 #endif /* SYSTEMCONFIG_H_ */

@@ -39,6 +39,7 @@
 #include "SteeringControl/MRC_pos/MRC_pos.h"
 #include "SteeringControl/SteeringControl.h"
 #include "ThrottleControl/ThrottleControl.h"
+#include "Button_LimitSwitch/Button_LimitSwitch.h"
 enum CMD_ID{
 	STOP_CMD=1,
 	START_CMD,
@@ -46,7 +47,9 @@ enum CMD_ID{
 	SET_PID_ANGLE_PARAMS,
 	AUTO_MODE_CMD,
 	MANUAL_MODE_CMD,
-	SETPOINT_CMD
+	SETPOINT_CMD,
+	RESET_CMD=10,
+	HOME_CMD=11
 };
 
 #endif /* INCLUDE_H_ */

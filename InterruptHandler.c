@@ -22,7 +22,7 @@ static int printStep=0;
 #define DEADBAND_STEERING 4000
 #define T2VEL 130//50000/6s/50Hz
 #define DEADBAND_THROTTLE 4000
-#define PULSE2VEL 50
+#define PULSE2VEL 100
 
 #define THROTTLE_SCALING 1000
 #define THROTTLE_OFFSET 0
@@ -35,6 +35,8 @@ extern float x,y,pre_x,pre_y,angle;
 bool flagNewGPSMsg=false,flagNewPos=false,flagControl=0;
 bool isAuto=false;
 bool isRunning=true;
+
+static bool hasFixed=false;
 
 #ifndef USE_QEI
 static int32_t Position = 0;
@@ -107,9 +109,9 @@ void Throttle_WTimer2BISR(void){
 #endif
 
 
-		sp = (i32DeltaT_Throttle-120000)/PULSE2VEL;
-		if (sp<-1000)
-			sp=-1000;
+		sp = (i32DeltaT_Throttle-80000)/PULSE2VEL;
+		if (sp<0)
+			sp=0;
 		else if (sp>1000)
 			sp=1000;
 		if ((sp - pre_sp > 2)||(sp - pre_sp < -2))
@@ -281,11 +283,41 @@ void Control_Timer5ISR(void)
 	LED_RED_TOGGLE;
 }
 
+void Button1_ISR()
+{
+	isAuto = !isAuto;
+	if (isAuto)
+	{
+		hasFixed = true;
+		LED3_ON;
+	}
+	else
+	{
+		hasFixed = false;
+		LED3_OFF;
+	}
+}
+
+void Button2_ISR()
+{
+	isAuto = !isAuto;
+	if (isAuto)
+	{
+		hasFixed = true;
+		LED3_ON;
+	}
+	else
+	{
+		hasFixed = false;
+		LED3_OFF;
+	}
+}
+
 void HandleGPSMsg(uint8_t* Msg)
 {
 	int i,sign=1,x_temp=0,y_temp=0;
 	static int fixCnt=0,floatCnt=0;
-	static bool hasFixed=false;
+
 	//check time
 	if ((Msg[0]!='2') || (Msg[1]!='0') ||
 			(Msg[2]<'0') || (Msg[2]>'9') ||
@@ -362,7 +394,6 @@ void UartGPSIntHandler()
 
 	}
 }
-
 
 static void processRFMsg(uint8_t *msg)
 {

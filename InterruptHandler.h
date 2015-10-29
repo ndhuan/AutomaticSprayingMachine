@@ -18,6 +18,9 @@ void Mode_WTimer3BISR(void);
 
 void Control_Timer5ISR(void);
 
+void Button1_ISR();
+void Button2_ISR();
+
 void UartGPSIntHandler(void);
 void UartRFIntHandler(void);
 

@@ -13,8 +13,8 @@
 #define LINE_DISTANCE (float)5.0
 #define TURN_DISTANCE (float)2.0
 #define TURN_ANGLE (float)40.0
-#define DELTA_POS_STRAIGHT 400
-#define DELTA_POS_TURN 200
+#define DELTA_POS_STRAIGHT 200
+#define DELTA_POS_TURN 100
 
 typedef enum{
 	START,
@@ -83,6 +83,7 @@ void PathFollowInit()
 	//
 	// 0	1
 
+
 	x_corner[0] = 0.0;//1m
 	y_corner[0] = 0.0;
 
@@ -98,10 +99,14 @@ void PathFollowInit()
 	angle_orig = atan2f(y_corner[3]-y_corner[0],x_corner[3]-x_corner[0]);
 	angle_dest=angle_orig;
 
-	initPID(&pidDistance,1.0,0.01,0.0);
-	initPID(&pidAngle,1.0,0.01,0.0);
+	initPID(&pidDistance,1.0,0.05,0.0);
+	initPID(&pidAngle,5.0,0.05,0.0);
+	enablePID(&pidDistance);
+	enablePID(&pidAngle);
 	pidSet(&pidDistance, 0);
 	pidSet(&pidAngle, 0);
+
+	//temp = signedDistance(-1,0,x_corner[3],y_corner[3],x_corner[0],y_corner[0]);
 
 	totalLine = (uint32_t)(distance(x_corner[1],y_corner[1],
 			x_corner[0],y_corner[0],x_corner[3],y_corner[3])/LINE_DISTANCE)+1;
@@ -110,12 +115,14 @@ void FollowLine(float x, float y, float angle, float signedDistance, float angle
 {
 	//motorSet(SubMod(angle_dest,angle)*RAD2PULSES,DELTA_POS_STRAIGHT);
 	//PIDPositionSet(0.5*SubMod(angle_dest,angle)*RAD2PULSES+0.5*signedDistance,DELTA_POS_STRAIGHT);
-	pidCalc(&pidAngle, SubMod(angle_dest,angle)*RAD2PULSES, 10000);
-	pidCalc(&pidDistance, signedDistance, 10000);
+
+	//pidCalc(&pidAngle, SubMod(angle_dest,angle)*RAD2PULSES, 10000);
+	pidCalc(&pidDistance, signedDistance, 20000);
 #ifdef _DEBUG_PID
-	RFprint("pid %d,%d",(int)pidAngle.PIDResult,(int)pidDistance.PIDResult);
+	//RFprint("pid %d,%d\r\n",(int)pidAngle.PIDResult,(int)pidDistance.PIDResult);
+	RFprint("pid %d,%d\r\n",(int)signedDistance,(int)(SubMod(angle_dest,angle)*RAD2PULSES));
 #endif
-	steeringSet(pidAngle.PIDResult+pidDistance.PIDResult,DELTA_POS_STRAIGHT);
+	steeringSet(pidDistance.PIDResult,DELTA_POS_STRAIGHT);
 }
 void TurnRight(float x, float y, float angle)
 {
@@ -151,7 +158,7 @@ void PathFollow(float x, float y, float angle)
 				else
 				{
 					eState = TURN_RIGHT;
-					RFsend("right\r\n",7);
+					RFprint("right\r\n");
 					angle_dest = -angle_orig;
 				}
 			}
@@ -170,7 +177,7 @@ void PathFollow(float x, float y, float angle)
 				else
 				{
 					eState = TURN_LEFT;
-					RFsend("left\r\n",6);
+					RFprint("left\r\n");
 					angle_dest = angle_orig;
 				}
 			}
@@ -208,7 +215,7 @@ void PathFollow(float x, float y, float angle)
 	{
 		SSTOP_STOP;
 		HBridgeDisable();
-		RFsend("finish\r\n",8);
+		RFprint("finish\r\n");
 		eState = FINISH;
 	}
 }

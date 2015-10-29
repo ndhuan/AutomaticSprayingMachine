@@ -8,7 +8,7 @@
 #include "include.h"
 
 #define TIMER_RF TIMER1_BASE
-#define TIMER_RF_INTERVAL_MS 5
+#define TIMER_RF_INTERVAL_MS 1
 
 
 #define UART_TX_BUFFER_SIZE 256

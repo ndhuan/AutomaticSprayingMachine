@@ -136,6 +136,18 @@ void ConfigSteeringControlTimer(uint32_t TimerIntervalms)
 	IntPrioritySet(INT_TIMER5A, 0x20);
 }
 
+void ConfigHomeTimeoutTimer()
+{
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);
+	ROM_TimerConfigure(TIMER2_BASE, TIMER_CFG_ONE_SHOT);
+
+	ROM_IntMasterEnable();
+	TimerIntRegister(TIMER2_BASE, TIMER_A, &Home_Timer2ISR);
+	ROM_IntEnable(INT_TIMER2A);
+	ROM_TimerIntEnable(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
+	ROM_TimerIntClear(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
+}
+
 void ConfigPWM_SStop_Throttle(void)
 {
 	//Configures the rate of the clock provided to the PWM module
