@@ -17,6 +17,8 @@ void ConfigPulseTimer_SStop_Throttle(void);
 
 void ConfigSteeringControlTimer(uint32_t TimerIntervalms);
 void ConfigHomeTimeoutTimer();
+
+void ConfigBattSense(void);
 void ConfigEncoder(void);
 
 void ConfigPWM_SStop_Throttle(void);

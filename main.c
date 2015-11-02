@@ -4,14 +4,14 @@
 
 #include "include.h"
 
-#define DEBUG_LOCAL_POS
+//#define DEBUG_LOCAL_POS
 
 extern bool flagNewGPSMsg,flagNewPos,isAuto;
 extern uint8_t MsgBuf[MAX_GPS_MSG_BYTE];
 extern uint32_t msgLen;
 
 bool flagFirstPos=true;
-float x=0.0,y=0.0,pre_x=0.0,pre_y=0.0,angle=0.0;
+float x=0.0,y=0.0,pre_x=0.0,pre_y=0.0,headingAngle=0.0;
 
 void main(void) {
 	//Enable FPU
@@ -50,6 +50,8 @@ void main(void) {
 	ConfigHomeTimeoutTimer();
 	throttleHome();
 
+	ConfigBattSense();
+
 	while(1)
 	{
 		if (flagNewPos)
@@ -58,10 +60,16 @@ void main(void) {
 			flagNewPos=0;
 			LED_GREEN_TOGGLE;
 #ifdef DEBUG_LOCAL_POS
-			UARTPutn(UART_DEBUG,(int)x);
-			ROM_UARTCharPutNonBlocking(UART_DEBUG,',');
-			UARTPutn(UART_DEBUG,(int)y);
-			ROM_UARTCharPutNonBlocking(UART_DEBUG,'\n');
+			if (!flagFirstPos)
+				//RFprint("pos %d,%d\r\n",x-x_calib,y-y_calib);
+			{
+				UARTPuts(UART_RF,"pos");
+				UARTPutn(UART_RF,x-x_calib);
+				ROM_UARTCharPut(UART_RF,',');
+				UARTPutn(UART_RF,y-y_calib);
+				ROM_UARTCharPut(UART_RF,'\r');
+				ROM_UARTCharPut(UART_RF,'\n');
+			}
 #endif
 			//tinh goc
 			if (flagFirstPos)
@@ -76,17 +84,19 @@ void main(void) {
 					y_calib /= 10;
 					flagFirstPos = false;
 				}
-
 			}
 			else
 			{
+				static bool flagFirstAngle=false;
 				if (isAuto)
 				{
-					angle = atan2f(y-pre_y,x-pre_x);
-					PathFollow(x-x_calib,y-y_calib,angle);
-#ifdef DEBUG_LOCAL_POS
-					RFprint("pos %d,%d",x-x_calib,y-y_calib);
-#endif
+					if ((y-pre_y)*(y-pre_y)+(x-pre_x)*(x-pre_x)>0.0025*D_SCALE*D_SCALE)
+					{
+						headingAngle = atan2f(y-pre_y,x-pre_x);
+						flagFirstAngle = true;
+					}
+					if (flagFirstAngle)
+						PathFollow(x-x_calib,y-y_calib,headingAngle);
 				}
 			}
 		}
@@ -96,9 +106,9 @@ void main(void) {
 			LED_BLUE_TOGGLE;
 			flagNewGPSMsg=0;
 			printStep++;
-			if (printStep==4)
+			if (printStep==5)
 			{
-				RFsend(MsgBuf,msgLen);
+//				RFsend(MsgBuf,msgLen);
 				printStep=0;
 			}
 		}

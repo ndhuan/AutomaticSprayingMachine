@@ -39,14 +39,14 @@ void DebounceISR()
 
 	if (flag)
 	{
-		ROM_TimerEnable(TIMER3_BASE,TIMER_A);
-		ROM_TimerLoadSet(TIMER3_BASE,TIMER_A,80000*DEBOUNCE_DELAY_MS);
+		ROM_TimerEnable(TIMER4_BASE,TIMER_A);
+		ROM_TimerLoadSet(TIMER4_BASE,TIMER_A,80000*DEBOUNCE_DELAY_MS);
 	}
 }
 void TimerDebounceISR()
 {
-	ROM_TimerIntClear(TIMER3_BASE,TIMER_A);
-	ROM_TimerDisable(TIMER3_BASE,TIMER_A);
+	ROM_TimerIntClear(TIMER4_BASE,TIMER_A);
+	ROM_TimerDisable(TIMER4_BASE,TIMER_A);
 	if ((flag & BUTTON1) && !(ROM_GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_2)
 			& GPIO_PIN_2))
 	{
@@ -102,12 +102,12 @@ void Config_Button_LimitSw(void)
 	ROM_IntEnable(INT_GPIOF);
 	GPIOIntEnable(GPIO_PORTF_BASE, GPIO_PIN_4);
 
-	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER3);//debounce timer
-	ROM_TimerConfigure(TIMER3_BASE, TIMER_CFG_PERIODIC);
-	ROM_TimerLoadSet(TIMER3_BASE,TIMER_A,80000*DEBOUNCE_DELAY_MS);
-	TimerIntRegister(TIMER3_BASE, TIMER_A, &TimerDebounceISR);
-	ROM_IntEnable(INT_TIMER3A);
-	ROM_TimerIntEnable(TIMER3_BASE, TIMER_TIMA_TIMEOUT);
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER4);//debounce timer
+	ROM_TimerConfigure(TIMER4_BASE, TIMER_CFG_PERIODIC);
+	ROM_TimerLoadSet(TIMER4_BASE,TIMER_A,80000*DEBOUNCE_DELAY_MS);
+	TimerIntRegister(TIMER4_BASE, TIMER_A, &TimerDebounceISR);
+	ROM_IntEnable(INT_TIMER4A);
+	ROM_TimerIntEnable(TIMER4_BASE, TIMER_TIMA_TIMEOUT);
 }
 
 

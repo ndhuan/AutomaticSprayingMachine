@@ -17,6 +17,8 @@ void SStop_WTimer2AISR(void);
 void Mode_WTimer3BISR(void);
 
 void Control_Timer5ISR(void);
+void BattSense_Timer3ISR(void);
+void BattSenseISR(void);
 
 void Button1_ISR();
 void Button2_ISR();

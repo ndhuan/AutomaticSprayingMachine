@@ -148,6 +148,20 @@ void ConfigHomeTimeoutTimer()
 	ROM_TimerIntClear(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
 }
 
+void ConfigBattSenseTimer()
+{
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER3);
+	ROM_TimerConfigure(TIMER3_BASE, TIMER_CFG_PERIODIC);
+	ROM_TimerLoadSet(TIMER3_BASE, TIMER_A, ROM_SysCtlClockGet()*5);
+
+	ROM_IntMasterEnable();
+	TimerIntRegister(TIMER3_BASE, TIMER_A, &BattSense_Timer3ISR);
+	ROM_IntEnable(INT_TIMER3A);
+	ROM_TimerIntEnable(TIMER3_BASE, TIMER_TIMA_TIMEOUT);
+	ROM_TimerIntClear(TIMER3_BASE, TIMER_TIMA_TIMEOUT);
+	ROM_TimerEnable(TIMER3_BASE, TIMER_A);
+}
+
 void ConfigPWM_SStop_Throttle(void)
 {
 	//Configures the rate of the clock provided to the PWM module
@@ -407,6 +421,21 @@ void ConfigMyUART(void)
 //	ConfigUART(&UART_Type);
 }
 
+void ConfigBattSense(void)
+{
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+	ROM_GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);
+	ROM_ADCHardwareOversampleConfigure(ADC0_BASE, 64);
+
+	ROM_ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
+	ROM_ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_END | ADC_CTL_CH0 | ADC_CTL_IE);
+	ROM_ADCSequenceEnable(ADC0_BASE, 3);
+ 	ADCIntRegister(ADC0_BASE, 3, &BattSenseISR);
+ 	ROM_ADCIntEnable(ADC0_BASE, 3);
+
+ 	ConfigBattSenseTimer();
+}
 
 
 

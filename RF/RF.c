@@ -8,7 +8,7 @@
 #include "include.h"
 
 #define TIMER_RF TIMER1_BASE
-#define TIMER_RF_INTERVAL_MS 1
+#define TIMER_RF_INTERVAL_MS 5
 
 
 #define UART_TX_BUFFER_SIZE 256
@@ -163,7 +163,7 @@ extern int RFsend(const uint8_t* pcBuf,uint32_t ui32Len)
 
 extern void RFprint(const char * restrict format, ...)
 {
-	volatile char Tx_Buf[512];
+	volatile char Tx_Buf[1024];
     va_list arg;
 
     memset((void *)Tx_Buf, 0, sizeof(Tx_Buf));

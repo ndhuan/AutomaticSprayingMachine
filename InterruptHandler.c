@@ -30,9 +30,9 @@ static int printStep=0;
 #define START_BYTE (char)0XAA
 
 
-extern float x,y,pre_x,pre_y,angle;
+extern float x,y,pre_x,pre_y,headingAngle;
 
-bool flagNewGPSMsg=false,flagNewPos=false,flagControl=0;
+bool flagNewGPSMsg=false,flagNewPos=false;
 bool isAuto=false;
 bool isRunning=true;
 
@@ -283,18 +283,45 @@ void Control_Timer5ISR(void)
 	LED_RED_TOGGLE;
 }
 
+void BattSense_Timer3ISR(void)
+{
+	ROM_TimerIntClear(TIMER3_BASE, TIMER_TIMA_TIMEOUT);
+	ROM_ADCProcessorTrigger(ADC0_BASE, 3);
+}
+
+void BattSenseISR(void)
+{
+	uint32_t ADCResult, BatteryVoltage;
+	ROM_ADCIntClear(ADC0_BASE, 3);
+	ROM_ADCSequenceDataGet(ADC0_BASE, 3, (uint32_t *)&ADCResult);
+	BatteryVoltage = ((float)ADCResult) / 4096 * 3.3 * (220 + 680) / 220;
+#warning CHECK BATT SENSE
+#if 0
+	if (BatteryVoltage < (float)11.0)
+	{
+		HBridgeEnable();
+		throttleStop();
+		while(1)
+		{
+			LED3_TOGGLE;
+			ROM_SysCtlDelay(ROM_SysCtlClockGet()/3);
+		}
+	}
+#endif
+}
+
 void Button1_ISR()
 {
 	isAuto = !isAuto;
 	if (isAuto)
 	{
 		hasFixed = true;
-		LED3_ON;
+		LED4_ON;
 	}
 	else
 	{
 		hasFixed = false;
-		LED3_OFF;
+		LED4_OFF;
 	}
 }
 
@@ -304,12 +331,12 @@ void Button2_ISR()
 	if (isAuto)
 	{
 		hasFixed = true;
-		LED3_ON;
+		LED4_ON;
 	}
 	else
 	{
 		hasFixed = false;
-		LED3_OFF;
+		LED4_OFF;
 	}
 }
 
@@ -356,6 +383,7 @@ void HandleGPSMsg(uint8_t* Msg)
 				return;
 		}
 		x_temp *= sign;
+		sign=1;
 		for (i=39;i<53;i++)
 		{
 			if (Msg[i] == '-')
@@ -397,7 +425,6 @@ void UartGPSIntHandler()
 
 static void processRFMsg(uint8_t *msg)
 {
-	//LED4_TOGGLE;
 	switch (msg[1])
 	{
 	case STOP_CMD:
