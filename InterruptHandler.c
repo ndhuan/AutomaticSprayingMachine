@@ -269,6 +269,7 @@ void Mode_WTimer3BISR(void){
 
 void Control_Timer5ISR(void)
 {
+	static int i;
 	ROM_TimerIntClear(TIMER5_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef USE_QEI
 	//Get Velocity
@@ -280,7 +281,12 @@ void Control_Timer5ISR(void)
 #endif
 
 	steeringControl();
-	LED_RED_TOGGLE;
+	i++;
+	if (i==50)
+	{
+		i=0;
+		LED_RED_TOGGLE;
+	}
 }
 
 void BattSense_Timer3ISR(void)

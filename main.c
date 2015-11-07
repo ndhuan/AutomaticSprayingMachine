@@ -4,7 +4,7 @@
 
 #include "include.h"
 
-//#define DEBUG_LOCAL_POS
+#define DEBUG_LOCAL_POS
 
 extern bool flagNewGPSMsg,flagNewPos,isAuto;
 extern uint8_t MsgBuf[MAX_GPS_MSG_BYTE];
@@ -61,15 +61,15 @@ void main(void) {
 			LED_GREEN_TOGGLE;
 #ifdef DEBUG_LOCAL_POS
 			if (!flagFirstPos)
-				//RFprint("pos %d,%d\r\n",x-x_calib,y-y_calib);
-			{
-				UARTPuts(UART_RF,"pos");
-				UARTPutn(UART_RF,x-x_calib);
-				ROM_UARTCharPut(UART_RF,',');
-				UARTPutn(UART_RF,y-y_calib);
-				ROM_UARTCharPut(UART_RF,'\r');
-				ROM_UARTCharPut(UART_RF,'\n');
-			}
+				RFprint("pos %d,%d\r\n",(int)(x-x_calib),(int)(y-y_calib));
+//			{
+//				UARTPuts(UART_RF,"pos");
+//				UARTPutn(UART_RF,x-x_calib);
+//				ROM_UARTCharPut(UART_RF,',');
+//				UARTPutn(UART_RF,y-y_calib);
+//				ROM_UARTCharPut(UART_RF,'\r');
+//				ROM_UARTCharPut(UART_RF,'\n');
+//			}
 #endif
 			//tinh goc
 			if (flagFirstPos)
